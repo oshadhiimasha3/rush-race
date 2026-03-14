@@ -1,37 +1,55 @@
 import { connectDB } from "../../../../lib/mongodb"
 import User from "../../../../models/User"
 import bcrypt from "bcryptjs"
-import { createToken } from "../../../../lib/auth"
+import { NextResponse } from "next/server"
 
-export async function POST(req: Request){
+export async function POST(req: Request) {
 
-  try{
+  try {
 
     await connectDB()
 
-    const body = await req.json()
+    const { email, password } = await req.json()
 
-    const {email,password} = body
+    // check if user exists
+    const user = await User.findOne({ email })
 
-    const user = await User.findOne({email})
-
-    if(!user){
-      return new Response(JSON.stringify({error:"User not found"}),{status:400})
+    if (!user) {
+      return NextResponse.json(
+        { error: "Invalid user" },
+        { status: 404 }
+      )
     }
 
-    const match = await bcrypt.compare(password,user.password)
+    // check password
+    const passwordMatch = await bcrypt.compare(password, user.password)
 
-    if(!match){
-      return new Response(JSON.stringify({error:"Wrong password"}),{status:400})
+    if (!passwordMatch) {
+      return NextResponse.json(
+        { error: "Invalid credentials. Please check again" },
+        { status: 401 }
+      )
     }
 
-    const token = createToken(user._id.toString())
+    // login success
+    return NextResponse.json(
+      {
+        message: "Login successful",
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email
+        }
+      },
+      { status: 200 }
+    )
 
-    return new Response(JSON.stringify({token}),{status:200})
+  } catch (error) {
 
-  }catch(err){
-
-    return new Response(JSON.stringify({error:"Login failed"}),{status:500})
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500 }
+    )
 
   }
 
