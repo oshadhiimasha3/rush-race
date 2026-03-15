@@ -1,16 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
-  const username = "Player1";
-  const [open, setOpen] = useState(false);
+
+  const [open,setOpen] = useState(false);
+  const [username,setUsername] = useState("Player");
+  const router = useRouter();
+
+  useEffect(()=>{
+
+    const storedUser = localStorage.getItem("user");
+
+    if(storedUser){
+      const user = JSON.parse(storedUser);
+      setUsername(user.username);
+    }
+
+  },[]);
+
+  const handleLogout = () => {
+
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+
+    router.push("/login");
+
+  };
 
   const logoText = "🍌 RUSH RACE";
 
   return (
     <nav className="w-full bg-black/40 backdrop-blur-md border-b border-white/10">
+
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
 
         {/* LOGO */}
@@ -30,33 +54,52 @@ export default function Navbar() {
 
         {/* PROFILE */}
         <div className="relative">
+
           <div
-            onClick={() => setOpen(!open)}
+            onClick={()=>setOpen(!open)}
             className="flex items-center gap-3 bg-white/10 px-3 py-2 rounded-lg hover:bg-white/20 transition cursor-pointer"
           >
+
             <img
               src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${username}`}
               className="w-8 h-8 rounded-full border-2 border-yellow-300 shadow-[0_0_10px_rgba(255,255,0,0.6)]"
             />
+
             <span className="text-white font-medium">{username}</span>
+
           </div>
 
           {open && (
             <div className="absolute right-0 mt-2 w-40 bg-black/80 backdrop-blur-md rounded-lg shadow-lg border border-white/10">
-              <Link href="/profile" className="block px-4 py-2 text-white hover:bg-white/10">
+
+              <Link
+                href="/profile"
+                className="block px-4 py-2 text-white hover:bg-white/10"
+              >
                 Profile
               </Link>
-              <Link href="/scores" className="block px-4 py-2 text-white hover:bg-white/10">
+
+              <Link
+                href="/scores"
+                className="block px-4 py-2 text-white hover:bg-white/10"
+              >
                 My Scores
               </Link>
-              <button className="w-full text-left px-4 py-2 text-red-400 hover:bg-white/10">
+
+              <button
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-2 text-red-400 hover:bg-white/10"
+              >
                 Logout
               </button>
+
             </div>
           )}
+
         </div>
 
       </div>
+
     </nav>
   );
 }
