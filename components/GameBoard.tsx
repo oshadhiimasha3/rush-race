@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-=======
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -269,4 +267,3 @@ export default function GameBoard({ userId }: { userId: string }) {
   )
 
 }
->>>>>>> Stashed changes

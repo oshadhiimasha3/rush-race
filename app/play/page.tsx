@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-=======
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Navbar from "../../components/Navbar";
@@ -39,4 +37,3 @@ export default async function Play(){
   )
 
 }
->>>>>>> Stashed changes
