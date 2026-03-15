@@ -22,7 +22,7 @@ Solve puzzles as fast as possible, earn points, and climb the global leaderboard
 Only the fastest minds win the race!
 </p>
 
-<Link href="/play">
+<Link href="/login">
 <button className="bg-white text-purple-700 font-bold px-8 py-4 rounded-xl text-lg hover:scale-105 transition shadow-xl">
 Start Game 🚀
 </button>
