@@ -1,35 +1,33 @@
-import { MongoClient } from "mongodb";
+import mongoose from "mongoose";
 
-const uri = process.env.MONGODB_URI as string;
+const MONGODB_URI = process.env.MONGODB_URI as string;
 
-if (!uri) {
-  throw new Error("Please add MONGODB_URI to .env.local");
+if (!MONGODB_URI) {
+  throw new Error("Please define the MONGODB_URI in .env.local");
 }
 
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
+let cached = (global as any).mongoose;
 
-const globalWithMongo = global as typeof globalThis & {
-  _mongoClientPromise?: Promise<MongoClient>;
-};
-
-if (!globalWithMongo._mongoClientPromise) {
-  client = new MongoClient(uri);
-  globalWithMongo._mongoClientPromise = client.connect();
+if (!cached) {
+  cached = (global as any).mongoose = { conn: null, promise: null };
 }
 
-clientPromise = globalWithMongo._mongoClientPromise;
+export async function connectDB() {
 
-export default clientPromise;
+  if (cached.conn) {
+    return cached.conn;
+  }
 
+  if (!cached.promise) {
 
+    cached.promise = mongoose.connect(MONGODB_URI, {
+      dbName: "rush-race",
+      bufferCommands: false,
+    });
 
-// import mongoose from "mongoose";
+  }
 
-// const MONGODB_URI = process.env.MONGODB_URI!;
+  cached.conn = await cached.promise;
 
-// export async function connectDB() {
-//   if (mongoose.connections[0].readyState) return;
-
-//   await mongoose.connect(MONGODB_URI);
-// }
+  return cached.conn;
+}
