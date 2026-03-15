@@ -1,69 +1,115 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 
-export default function Register() {
-  const [username, setUsername] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+export default function RegisterPage() {
 
-  async function register() {
-    await fetch("/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify({ username, email, password })
-    })
+  const router = useRouter()
+
+  const [username,setUsername] = useState("")
+  const [email,setEmail] = useState("")
+  const [password,setPassword] = useState("")
+  const [error,setError] = useState("")
+  const [loading,setLoading] = useState(false)
+
+  const handleRegister = async (e: React.FormEvent) => {
+
+    e.preventDefault()
+    setLoading(true)
+    setError("")
+
+    try{
+
+      const res = await fetch("/api/auth/register",{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          username,
+          email,
+          password
+        })
+      })
+
+      const data = await res.json()
+
+      if(!res.ok){
+        setError(data.error || "Registration failed")
+        setLoading(false)
+        return
+      }
+
+      alert("Registration successful!")
+
+      router.push("/login")
+
+    }catch(err){
+
+      setError("Something went wrong")
+
+    }
+
+    setLoading(false)
+
   }
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-10 shadow-xl ring-1 ring-slate-200">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Create account</h1>
-          <p className="mt-2 text-sm text-slate-600">Start your journey with us today.</p>
-        </div>
+  return(
 
-        <div className="mt-8 space-y-4">
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-slate-700">Username</label>
-            <input
-              className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder-slate-400 transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-              placeholder="johndoe"
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </div>
+    <div className="flex justify-center items-center h-screen">
 
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-slate-700">Email address</label>
-            <input
-              className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder-slate-400 transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-              placeholder="name@company.com"
-              type="email"
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
+      <form
+        onSubmit={handleRegister}
+        className="flex flex-col gap-4 p-8 border rounded-lg w-96"
+      >
 
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-slate-700">Password</label>
-            <input
-              className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder-slate-400 transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-              placeholder="••••••••"
-              type="password"
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+        <h1 className="text-2xl font-bold text-center">
+          Register
+        </h1>
 
-          <button
-            onClick={register}
-            className="group relative flex w-full justify-center rounded-lg bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          >
-            Create Account
-          </button>
-        </div>
+        <input
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e)=>setUsername(e.target.value)}
+          className="border p-2 rounded"
+        />
 
-        <p className="mt-4 text-center text-xs text-slate-500">
-          By registering, you agree to our Terms of Service.
-        </p>
-      </div>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e)=>setEmail(e.target.value)}
+          className="border p-2 rounded"
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e)=>setPassword(e.target.value)}
+          className="border p-2 rounded"
+        />
+
+        {error && (
+          <p className="text-red-500 text-sm">
+            {error}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          className="bg-blue-500 text-white p-2 rounded"
+        >
+
+          {loading ? "Creating..." : "Register"}
+
+        </button>
+
+      </form>
+
     </div>
+
   )
 }

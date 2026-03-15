@@ -1,24 +1,39 @@
-import Navbar from "../../components/Navbar"
-import GameBoard from "../../components/GameBoard"
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import Navbar from "../../components/Navbar";
+import GameBoard from "../../components/GameBoard";
 
-export default function Play(){
+export default async function Play(){
 
-return(
+  const cookieStore = await cookies();
+  const userCookie = cookieStore.get("userId");
 
-<div className="min-h-screen bg-gradient-to-br from-purple-900 to-black text-white">
+  // if not logged in redirect
+  if(!userCookie){
+    redirect("/login");
+  }
 
-<Navbar/>
+  const userId = userCookie.value;
 
-<div className="flex flex-col items-center justify-center mt-10">
+  return(
 
-<h1 className="text-4xl font-bold mb-6">Rush Race Arena 🎮</h1>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-black text-white">
 
-<GameBoard/>
+      <Navbar/>
 
-</div>
+      <div className="flex flex-col items-center justify-center mt-10">
 
-</div>
+        <h1 className="text-4xl font-bold mb-6">
+          Rush Race Arena 🎮
+        </h1>
 
-)
+        {/* pass userId to gameboard */}
+        <GameBoard userId={userId}/>
+
+      </div>
+
+    </div>
+
+  )
 
 }

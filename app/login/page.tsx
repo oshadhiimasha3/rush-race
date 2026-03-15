@@ -1,45 +1,119 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 
-export default function Login() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+export default function LoginPage() {
 
-  async function login() {
-    await fetch("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password })
-    })
+  const router = useRouter()
+
+  const [email,setEmail] = useState("")
+  const [password,setPassword] = useState("")
+  const [error,setError] = useState("")
+  const [loading,setLoading] = useState(false)
+
+  const handleLogin = async (e: React.FormEvent) => {
+
+    e.preventDefault()
+
+    setLoading(true)
+    setError("")
+
+    try {
+
+      const res = await fetch("/api/auth/login", {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body: JSON.stringify({
+          email,
+          password
+        })
+      })
+
+      const data = await res.json()
+
+      // error cases
+      if(!res.ok){
+
+        if(data.error === "Invalid user"){
+          setError("Invalid user")
+        }
+        else if(data.error === "Invalid credentials. Please check again"){
+          setError("Invalid credentials. Please check again")
+        }
+        else{
+          setError("Login failed")
+        }
+
+        setLoading(false)
+        return
+      }
+
+      // success case
+      alert("Login successful")
+
+      router.replace("/play")
+
+    } catch {
+
+      setError("Something went wrong")
+
+    }
+
+    setLoading(false)
+
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-lg">
-        <h1 className="mb-6 text-center text-3xl font-bold text-gray-800">Login</h1>
-        
-        <div className="space-y-4">
-          <input
-            className="w-full rounded-lg border border-gray-300 p-3 outline-none transition focus:ring-2 focus:ring-blue-500"
-            placeholder="Email"
-            type="email"
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            className="w-full rounded-lg border border-gray-300 p-3 outline-none transition focus:ring-2 focus:ring-blue-500"
-            placeholder="Password"
-            type="password"
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          
-          <button
-            onClick={login}
-            className="w-full rounded-full bg-blue-700 p-3 font-semibold text-white transition hover:bg-blue-700 active:scale-[0.98]"
-          >
-            Login
-          </button>
-        </div>
-      </div>
+
+    <div className="flex justify-center items-center h-screen">
+
+      <form
+        onSubmit={handleLogin}
+        className="flex flex-col gap-4 p-8 border rounded-lg w-96"
+      >
+
+        <h1 className="text-2xl font-bold text-center">
+          Login
+        </h1>
+
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e)=>setEmail(e.target.value)}
+          className="border p-2 rounded"
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e)=>setPassword(e.target.value)}
+          className="border p-2 rounded"
+        />
+
+        {error && (
+          <p className="text-red-500 text-sm">
+            {error}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          className="bg-green-500 text-white p-2 rounded"
+        >
+
+          {loading ? "Logging in..." : "Login"}
+
+        </button>
+
+      </form>
+
     </div>
+
   )
+
 }
