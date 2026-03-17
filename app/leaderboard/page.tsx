@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react";
+import Navbar from "@/components/Navbar";
 
 type LeaderboardEntry = {
   _id: string;
@@ -74,12 +75,16 @@ export default function Leaderboard() {
   const rest = rankedLeaders.slice(3);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-100 to-yellow-200 text-gray-900 flex flex-col items-center py-10">
+    // adjusted padding: top 0 to remove gap above navbar, bottom 10 for spacing
+    <div className="min-h-screen bg-gradient-to-br from-brown-100 to-yellow-200 text-gray-900 flex flex-col items-center pt-0 pb-10">
       
+      {/* Navbar at the top */}
+      <Navbar />
+
       {/* title */}
-      <h1 className="text-4xl md:text-5xl font-extrabold text-yellow-600 mb-10 text-center animate-race">
+      <h1 className="text-4xl md:text-5xl font-extrabold text-yellow-600 mt-8 mb-10 text-center animate-race">
         TOP RUSHERS
-      </h1>
+    </h1>
 
       {/* animations */}
       <style jsx>{`
@@ -124,7 +129,7 @@ export default function Leaderboard() {
         <div className="w-full max-w-xl bg-yellow-50/70 backdrop-blur-md rounded-3xl shadow-xl border border-yellow-200 p-6 md:p-8">
 
           {/* TOP 3 rounded box */}
-          <div className="bg-gradient-to-r from-yellow-200/60 to-yellow-300/70 rounded-xl p-4 mb-8 mt-4 flex justify-center items-end gap-6 w-[85%] mx-auto">
+          <div className="bg-gradient-to-r from-yellow-200/60 to-orange-300/60 rounded-xl p-4 mb-8 mt-4 flex justify-center items-end gap-6 w-[85%] mx-auto">
             
             {/* 2nd place */}
             {top3[1] && (
