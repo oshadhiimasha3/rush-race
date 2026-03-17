@@ -16,16 +16,12 @@ export default async function Play(){
   const userId = userCookie.value;
 
   return(
+    <div className="min-h-screen bg-gradient-to-br from-yellow-100 to-orange-200 text-gray-900">
 
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-black text-white">
-
+      {/* Navbar */}
       <Navbar/>
 
-      <div className="flex flex-col items-center justify-center mt-10">
-
-        <h1 className="text-4xl font-bold mb-6">
-          Rush Race Arena 🎮
-        </h1>
+      <div className="flex flex-col items-center justify-center mt-5">
 
         {/* pass userId to gameboard */}
         <GameBoard userId={userId}/>
@@ -33,7 +29,5 @@ export default async function Play(){
       </div>
 
     </div>
-
   )
-
 }
