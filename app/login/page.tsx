@@ -8,14 +8,14 @@ export default function LoginPage() {
 
   const router = useRouter()
 
-  const [email,setEmail] = useState("")
-  const [password,setPassword] = useState("")
+  const [email,setEmail] = useState("") //store user input
+  const [password,setPassword] = useState("") //store user input
   const [error,setError] = useState("")
   const [loading,setLoading] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
 
-    e.preventDefault()
+    e.preventDefault() //stops the page from refreshing when the form is submitted.
 
     setLoading(true)
     setError("")
@@ -28,7 +28,7 @@ export default function LoginPage() {
           "Content-Type":"application/json"
         },
         body: JSON.stringify({
-          email,
+          email,   //backend verifies the details
           password
         })
       })

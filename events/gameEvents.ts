@@ -1,3 +1,4 @@
+// Define a set of named constants representing different events in the game
 export const GAME_EVENTS = {
 
 GAME_STARTED:"game_started",

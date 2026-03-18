@@ -8,7 +8,7 @@ export async function POST(req: Request){
 
     await connectDB()
 
-    const { userId, score, correctAnswers = 0 } = await req.json()
+    const { userId, score, correctAnswers = 0 } = await req.json() // frontend sends the userId, score, and correctAnswers
 
     if(!userId){
       return NextResponse.json(
@@ -34,7 +34,7 @@ export async function POST(req: Request){
       user.stats.highestScore = score
     }
 
-    await user.save()
+    await user.save() //Saves the updated stats back to the database.
 
     return NextResponse.json(
       {

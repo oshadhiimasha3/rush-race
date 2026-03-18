@@ -15,7 +15,7 @@ export default function RegisterPage() {
   const [error,setError] = useState("")
   const [loading,setLoading] = useState(false)
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {  //runs when user clicks Register
 
     e.preventDefault()
     setLoading(true)

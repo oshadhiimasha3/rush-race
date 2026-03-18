@@ -9,9 +9,9 @@ export async function POST(req: Request) {
 
     await connectDB()
 
-    const { email, password } = await req.json()
+    const { email, password } = await req.json() //gets the email and password from login form
 
-    const user = await User.findOne({ email })
+    const user = await User.findOne({ email })  //The system checks if a user with this email exists in the database
 
     if (!user) {
       return NextResponse.json(
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password)
+    const passwordMatch = await bcrypt.compare(password, user.password)  //checks if password match hashed password in db
 
     if (!passwordMatch) {
       return NextResponse.json(
@@ -35,17 +35,17 @@ export async function POST(req: Request) {
         user: {
           id: user._id,
           username: user.username,
-          email: user.email
+          email: user.email    // sends back a success message with basic user info
         }
       },
       { status: 200 }
     )
 
-    // 🍪 set login cookie
+    //  set login cookie
     response.cookies.set("userId", user._id.toString(), {
       httpOnly: true,
-      path: "/",
-      maxAge: 60 * 60 * 24 // 1 day
+      path: "/", //cookie is accessible across the whole site
+      maxAge: 60 * 60 * 24 // cookie lasts 1 day
     })
 
     return response

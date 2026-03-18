@@ -1,11 +1,12 @@
 import Navbar from "../components/Navbar"
 import Link from "next/link"
+import Footer from "../components/Footer"
 
 export default function Home(){
 
 return(
 
-<div className="min-h-screen bg-gradient-to-br from-yellow-400 via-orange-500 to-purple-800 text-white">
+<div className="min-h-screen flex flex-col bg-gradient-to-br from-yellow-400 via-orange-500 to-purple-800 text-white">
 
 <Navbar/>
 
@@ -56,6 +57,11 @@ Each puzzle is different. Stay focused and improve your speed and accuracy.
 </p>
 </div>
 
+</div>
+
+{/* Push footer to bottom */}
+<div className="mt-auto">
+  <Footer/>
 </div>
 
 </div>
