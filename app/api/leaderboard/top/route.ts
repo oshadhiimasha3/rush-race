@@ -6,11 +6,11 @@ export async function GET() {
   try {
     await connectDB();
 
-    // Get top 10 users by highestScore descending
-    const topUsers = await User.find({})
-      .sort({ "stats.highestScore": -1 })
-      .limit(10)
-      .select({ username: 1, "stats.highestScore": 1 });
+  
+    const topUsers = await User.find({}) //fetches all users
+      .sort({ "stats.highestScore": -1 }) //sorts users descending by highest score
+      .limit(10) //keeps only the top 10 users
+      .select({ username: 1, "stats.highestScore": 1 }); //returns only the username and highestScore
 
     // Map to simplified object
     const leaderboard = topUsers.map(user => ({
@@ -19,7 +19,7 @@ export async function GET() {
       highestScore: user.stats.highestScore
     }));
 
-    return NextResponse.json(leaderboard, { status: 200 });
+    return NextResponse.json(leaderboard, { status: 200 }); //Sends the top 10 leaderboard entries back to the frontend
   } catch (err) {
     console.error("Leaderboard fetch error:", err);
     return NextResponse.json({ error: "Failed to fetch leaderboard" }, { status: 500 });

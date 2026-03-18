@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     await connectDB();
 
     const body = await req.json();
-    const { username, email, password } = body;
+    const { username, email, password } = body;  //Extracts username, email, and password.
 
     if (!username || !email || !password) {
       return new Response(
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10); //hashed password
 
     const newUser = await User.create({
       username,

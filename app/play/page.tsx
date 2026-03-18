@@ -5,8 +5,8 @@ import GameBoard from "../../components/GameBoard";
 
 export default async function Play(){
 
-  const cookieStore = await cookies();
-  const userCookie = cookieStore.get("userId");
+  const cookieStore = await cookies(); //Reads the userId cookie stored after login.
+  const userCookie = cookieStore.get("userId");  //This is how the page knows who the current user is.
 
   // if not logged in redirect
   if(!userCookie){

@@ -11,6 +11,7 @@ export default function GameBoard({ userId }: { userId: string }) {
   const TIME_DECREMENT = 5;
   const BASE_SCORE = 10;
 
+  //State Variables
   const [puzzle, setPuzzle] = useState<any>(null);
   const [answer, setAnswer] = useState("");
   const [score, setScore] = useState(0);
@@ -23,22 +24,23 @@ export default function GameBoard({ userId }: { userId: string }) {
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [stage, setStage] = useState(1); // 1, 2, 3
 
-  const timerRef = useRef<any>(null);
+  const timerRef = useRef<any>(null); //stores reference to the timer to clear it when needed.
 
   async function loadPuzzle(isFirst = false){
-    const data = await getPuzzle(stage);
+    const data = await getPuzzle(stage); //fetches puzzle from API
     setPuzzle(data);
     setFeedback("");
 
+    //Determines time limit for puzzle
     const newTimeLimit = isFirst
       ? START_TIME
       : Math.max(MIN_TIME, currentTimeLimit - TIME_DECREMENT);
 
     setCurrentTimeLimit(newTimeLimit);
-    setTimeLeft(newTimeLimit);
+    setTimeLeft(newTimeLimit); //Updates currentTimeLimit and timeLeft
   }
 
-  useEffect(()=>{ loadPuzzle(true); },[stage]);
+  useEffect(()=>{ loadPuzzle(true); },[stage]); //Loads a puzzle whenever the stage changes
 
   useEffect(()=>{
     if(gameOver) return;
@@ -51,7 +53,7 @@ export default function GameBoard({ userId }: { userId: string }) {
       return;
     }
 
-    timerRef.current = setTimeout(()=>setTimeLeft(timeLeft - 0.1),100);
+    timerRef.current = setTimeout(()=>setTimeLeft(timeLeft - 0.1),100); //Decreases timeLeft by 0.1 seconds every 100ms.
     return ()=>clearTimeout(timerRef.current);
   },[timeLeft,gameOver]);
 
@@ -66,11 +68,11 @@ export default function GameBoard({ userId }: { userId: string }) {
   }
 
   function submit(){
-    if(!puzzle || gameOver) return;
+    if(!puzzle || gameOver) return; //If no puzzle is loaded or game is over do nothing.
 
     if(parseInt(answer) === puzzle.solution){
       const newCombo = combo + 1
-      const newScore = score + BASE_SCORE * (1 + combo * 0.5)
+      const newScore = score + BASE_SCORE * (1 + combo * 0.5) //Score is BASE_SCORE multiplied by combo bonus.
 
       setCombo(newCombo)
       setScore(newScore)

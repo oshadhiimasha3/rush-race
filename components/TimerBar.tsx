@@ -1,11 +1,12 @@
 "use client";
 
 interface TimerBarProps {
-  time: number;        // current time left
-  maxTime: number;     // max time for bar calculation
+  time: number;        // Current remaining time (seconds)
+  maxTime: number;     // max time for progress bar calculation
 }
 
 export default function TimerBar({ time, maxTime }: TimerBarProps) {
+  // Calculate percentage of time left relative to maxTime, capped at 100%
   const percent = Math.min((time / maxTime) * 100, 100);
 
   return (

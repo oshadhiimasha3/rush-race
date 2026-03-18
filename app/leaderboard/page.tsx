@@ -52,7 +52,7 @@ export default function Leaderboard() {
   // RANKING  
   let currentRank = 1;
 
-  const rankedLeaders = leaders.map((player, index) => {
+  const rankedLeaders = leaders.map((player, index) => { //Go through each player in the leaders list, one by one.
     // first player always rank 1
     if (index === 0) {
       return { ...player, rank: 1 };
