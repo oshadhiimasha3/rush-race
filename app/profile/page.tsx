@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer"; // import Footer
 
 // type for user data coming from backend
 type UserType = {
@@ -69,109 +70,117 @@ export default function ProfilePage() {
     `https://api.dicebear.com/7.x/pixel-art/png?seed=${username}`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-100 to-yellow-200 text-gray-900">
+    // top-level container with flex-col so Footer can stick to bottom
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-yellow-100 to-yellow-200 text-gray-900">
 
-      {/* top navbar */}
-      <Navbar />
+      {/* Main content grows to push Footer down */}
+      <div className="flex-1 flex flex-col">
 
-      <div className="flex flex-col items-center py-10 px-4">
+        {/* top navbar */}
+        <Navbar />
 
-        {/* page title */}
-        <h1 className="text-4xl font-extrabold text-yellow-600 mb-10">
-          My Profile
-        </h1>
+        <div className="flex flex-col items-center py-10 px-4">
 
-        {/* show loading text while fetching */}
-        {loading && (
-          <p className="text-gray-600">Loading...</p>
-        )}
+          {/* page title */}
+          <h1 className="text-4xl font-extrabold text-yellow-600 mb-10">
+            My Profile
+          </h1>
 
-        {/* show error if something went wrong */}
-        {!loading && error && (
-          <p className="text-red-500">{error}</p>
-        )}
+          {/* show loading text while fetching */}
+          {loading && (
+            <p className="text-gray-600">Loading...</p>
+          )}
 
-        {/* show profile only when data is ready */}
-        {!loading && user && (
+          {/* show error if something went wrong */}
+          {!loading && error && (
+            <p className="text-red-500">{error}</p>
+          )}
 
-          <div className="w-full max-w-4xl flex flex-col md:flex-row gap-6">
+          {/* show profile only when data is ready */}
+          {!loading && user && (
 
-                {/* ================= USER INFO BOX ================= */}
-                <div className="flex-1 bg-yellow-50/70 backdrop-blur-md rounded-3xl shadow-xl border border-yellow-200 p-6  flex flex-col items-center justify-center
-                transition-all duration-300 hover:shadow-yellow-400/40 hover:scale-105">
-    
+            <div className="w-full max-w-4xl flex flex-col md:flex-row gap-6">
+
+              {/* ================= USER INFO BOX ================= */}
+              <div className="flex-1 bg-yellow-50/70 backdrop-blur-md rounded-3xl shadow-xl border border-yellow-200 p-6 flex flex-col items-center justify-center
+              transition-all duration-300 hover:shadow-yellow-400/40 hover:scale-105">
+
                 {/* profile avatar */}
                 <img
-                 src={getAvatar(user.username || "user")} // fallback if no username
-                    className="w-24 h-24 rounded-full border-4 border-yellow-400 shadow-lg mb-4"
+                  src={getAvatar(user.username || "user")} // fallback if no username
+                  className="w-24 h-24 rounded-full border-4 border-yellow-400 shadow-lg mb-4"
                 />
 
-                 {/* username with label, added extra top margin */}
-                 <h2 className="text-xl font-bold text-[#8B5E3C] mt-4 mb-1">
-                     Username: {user.username || "Unknown User"}
+                {/* username with label, added extra top margin */}
+                <h2 className="text-xl font-bold text-[#8B5E3C] mt-4 mb-1">
+                  Username: {user.username || "Unknown User"}
                 </h2>
 
                 {/* email with label */}
                 <p className="text-gray-600">
-                    Email: {user.email || "No email"}
+                  Email: {user.email || "No email"}
                 </p>
 
-            </div>
+              </div>
 
-            {/* ================= STATS BOX ================= */}
-            <div className="flex-1 bg-yellow-50/70 backdrop-blur-md rounded-3xl shadow-xl border border-yellow-200 p-11
-                            transition-all duration-300 hover:shadow-yellow-400/40 hover:scale-105">
+              {/* ================= STATS BOX ================= */}
+              <div className="flex-1 bg-yellow-50/70 backdrop-blur-md rounded-3xl shadow-xl border border-yellow-200 p-11
+                              transition-all duration-300 hover:shadow-yellow-400/40 hover:scale-105">
 
-              <h2 className="text-2xl font-bold text-yellow-600 mb-7 text-center">
-                Game Stats
-              </h2>
+                <h2 className="text-2xl font-bold text-yellow-600 mb-7 text-center">
+                  Game Stats
+                </h2>
 
-              <div className="space-y-4">
+                <div className="space-y-4">
 
-                {/* total score */}
-                <div className="flex justify-between bg-gradient-to-r from-yellow-200/70 to-yellow-300/70 px-4 py-3 rounded-xl
-                                transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-yellow-300/40 cursor-pointer">
-                  <span>Total Score</span>
-                  <span className="font-bold">
-                    {user.stats?.totalScore ?? 0}
-                  </span>
-                </div>
+                  {/* total score */}
+                  <div className="flex justify-between bg-gradient-to-r from-yellow-200/70 to-yellow-300/70 px-4 py-3 rounded-xl
+                                  transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-yellow-300/40 cursor-pointer">
+                    <span>Total Score</span>
+                    <span className="font-bold">
+                      {user.stats?.totalScore ?? 0}
+                    </span>
+                  </div>
 
-                {/* games played */}
-                <div className="flex justify-between bg-gradient-to-r from-yellow-200/70 to-yellow-300/70 px-4 py-3 rounded-xl
-                                transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-yellow-300/40 cursor-pointer">
-                  <span>Games Played</span>
-                  <span className="font-bold">
-                    {user.stats?.gamesPlayed ?? 0}
-                  </span>
-                </div>
+                  {/* games played */}
+                  <div className="flex justify-between bg-gradient-to-r from-yellow-200/70 to-yellow-300/70 px-4 py-3 rounded-xl
+                                  transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-yellow-300/40 cursor-pointer">
+                    <span>Games Played</span>
+                    <span className="font-bold">
+                      {user.stats?.gamesPlayed ?? 0}
+                    </span>
+                  </div>
 
-                {/* highest score */}
-                <div className="flex justify-between bg-gradient-to-r from-yellow-200/70 to-yellow-300/70 px-4 py-3 rounded-xl
-                                transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-yellow-300/40 cursor-pointer">
-                  <span>Highest Score</span>
-                  <span className="font-bold">
-                    {user.stats?.highestScore ?? 0}
-                  </span>
-                </div>
+                  {/* highest score */}
+                  <div className="flex justify-between bg-gradient-to-r from-yellow-200/70 to-yellow-300/70 px-4 py-3 rounded-xl
+                                  transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-yellow-300/40 cursor-pointer">
+                    <span>Highest Score</span>
+                    <span className="font-bold">
+                      {user.stats?.highestScore ?? 0}
+                    </span>
+                  </div>
 
-                {/* correct answers */}
-                <div className="flex justify-between bg-gradient-to-r from-yellow-200/70 to-yellow-300/70 px-4 py-3 rounded-xl
-                                transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-yellow-300/40 cursor-pointer">
-                  <span>Correct Answers</span>
-                  <span className="font-bold">
-                    {user.stats?.correctAnswers ?? 0}
-                  </span>
+                  {/* correct answers */}
+                  <div className="flex justify-between bg-gradient-to-r from-yellow-200/70 to-yellow-300/70 px-4 py-3 rounded-xl
+                                  transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-yellow-300/40 cursor-pointer">
+                    <span>Correct Answers</span>
+                    <span className="font-bold">
+                      {user.stats?.correctAnswers ?? 0}
+                    </span>
+                  </div>
+
                 </div>
 
               </div>
 
             </div>
+          )}
 
-          </div>
-        )}
-
+        </div>
       </div>
+
+      {/* Footer always at bottom */}
+      <Footer />
     </div>
   );
 }
