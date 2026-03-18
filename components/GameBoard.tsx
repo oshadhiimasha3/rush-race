@@ -21,11 +21,12 @@ export default function GameBoard({ userId }: { userId: string }) {
   const [gameOver, setGameOver] = useState(false);
   const [currentTimeLimit, setCurrentTimeLimit] = useState(START_TIME);
   const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [stage, setStage] = useState(1); // 1, 2, 3
 
   const timerRef = useRef<any>(null);
 
   async function loadPuzzle(isFirst = false){
-    const data = await getPuzzle();
+    const data = await getPuzzle(stage);
     setPuzzle(data);
     setFeedback("");
 
@@ -37,7 +38,7 @@ export default function GameBoard({ userId }: { userId: string }) {
     setTimeLeft(newTimeLimit);
   }
 
-  useEffect(()=>{ loadPuzzle(true); },[]);
+  useEffect(()=>{ loadPuzzle(true); },[stage]);
 
   useEffect(()=>{
     if(gameOver) return;
@@ -59,7 +60,7 @@ export default function GameBoard({ userId }: { userId: string }) {
       await fetch("/api/game/updateScore",{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
-        body:JSON.stringify({ userId, score:finalScore, correctAnswers })
+        body:JSON.stringify({ userId, score:finalScore, correctAnswers, stage })
       })
     }catch{ console.log("Score update failed") }
   }
@@ -76,6 +77,12 @@ export default function GameBoard({ userId }: { userId: string }) {
       setCoins(coins + 10)
       setCorrectAnswers(prev => prev + 1)
       setFeedback(`✅ Correct! +10 Coins! Combo x${newCombo}`)
+
+      // ================= Auto Stage Progression =================
+      if(newScore >= 100 && stage !== 3) setStage(3);
+      else if(newScore >= 50 && stage === 1) setStage(2);
+      // ==========================================================
+
       setTimeout(()=>loadPuzzle(),1200)
     } else {
       setFeedback("❌ Wrong! Game Over")
@@ -106,6 +113,7 @@ export default function GameBoard({ userId }: { userId: string }) {
     setCorrectAnswers(0)
     setCurrentTimeLimit(START_TIME)
     setTimeLeft(START_TIME)
+    setStage(1); 
     setGameOver(false)
     loadPuzzle(true)
   }
@@ -120,8 +128,54 @@ export default function GameBoard({ userId }: { userId: string }) {
     setFeedback("⏩ Puzzle Skipped!");
   }
 
+  // ========== Calculate banana progress position ==========
+  const maxScore = 150; // maximum score considered
+  const progressPercent = Math.min((score / maxScore) * 100, 100);
+
+  // ========== Stage dot positions based on score thresholds ==========
+  const stageThresholds = [0, 50, 100]; // scores where stages start
+  const stagePositions = stageThresholds.map(threshold => Math.min((threshold / maxScore) * 100, 100));
+
   return(
-    <div className="flex flex-col items-center justify-start pt-2 px-4 pb-8 w-full"> {/* Added pb-8 for bottom space */}
+    <div className="flex flex-col items-center justify-start pt-4 px-4 pb-8 w-full">
+
+      {/* =================== Banana Progress Bar =================== */}
+      <div className="mb-6 w-full max-w-2xl">
+        <div className="relative h-6 w-full flex items-center">
+          {/* Background line with gradient */}
+          <div className="absolute top-3 h-2 w-full rounded-full bg-gradient-to-r from-yellow-200 via-yellow-300 to-pink-200" />
+
+          {/* Stage dots integrated into the bar */}
+          {stagePositions.map((pos, idx) => (
+            <span
+              key={idx}
+              className="absolute w-3 h-3 rounded-full bg-[orange]"
+              style={{ left: `${pos}%`, transform: `translateX(-50%)` }}
+            />
+          ))}
+
+          {/* Banana emoji */}
+          <span
+            className="absolute -top-2 text-2xl transition-left duration-500"
+            style={{ left: `${progressPercent}%`, transform: `translateX(-50%)` }}
+          >
+            🍌
+          </span>
+        </div>
+
+        {/* Stage labels aligned under their dots */}
+        <div className="relative w-full h-6 mt-2 mb-4.5">
+          {stagePositions.map((pos, idx) => (
+            <span
+              key={idx}
+              className="absolute text-gray-700 text-sm font-semibold"
+              style={{ left: `${pos}%`, transform: `translateX(-50%)` }}
+            >
+              Stage {idx + 1}
+            </span>
+          ))}
+        </div>
+      </div>
 
       {/* =================== Score & Coins HUD =================== */}
       <div className="mb-4 flex items-center gap-6 justify-center w-full max-w-md">
