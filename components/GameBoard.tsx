@@ -70,7 +70,7 @@ export default function GameBoard({ userId }: { userId: string }) {
   function submit(){
     if(!puzzle || gameOver) return; //If no puzzle is loaded or game is over do nothing.
 
-    if(parseInt(answer) === puzzle.solution){
+    if(parseInt(answer) === puzzle.solution){ // checking the solution
       const newCombo = combo + 1
       const newScore = score + BASE_SCORE * (1 + combo * 0.5) //Score is BASE_SCORE multiplied by combo bonus.
 
@@ -196,7 +196,7 @@ export default function GameBoard({ userId }: { userId: string }) {
       <div className="bg-yellow-50/80 backdrop-blur-md p-6 rounded-3xl shadow-2xl flex flex-col items-center w-full max-w-lg mb-6">
         {puzzle && (
           <img
-            src={puzzle.question}
+            src={puzzle.question} //puzzle image
             alt="Puzzle"
             className="w-full h-auto rounded-xl shadow-lg mb-4"
             style={{ maxHeight: "500px", objectFit: "contain" }}
