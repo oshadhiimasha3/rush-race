@@ -43,27 +43,27 @@ export default function Navbar() {
 
   return (
 
-   <nav className="w-full bg-yellow-100/30 backdrop-blur-md border-b border-yellow-200/50">
+   <nav className="w-full bg-transparent backdrop-blur-md border-b border-white/10">
 
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
 
         {/* LOGO with moving/glow effect */}
         <Link href="/">
-          <span className="text-2xl font-bold logo-moving inline-block">
+          <span className="text-2xl font-bold logo-moving inline-block text-white">
             {logoText}
           </span>
         </Link>
 
         {/* NAV LINKS */}
-        <div className="flex gap-8 text-[#8B5E3C] font-medium"> 
+        <div className="flex gap-8 text-white font-medium"> 
 
-          {/* Home Link with smooth yellow underline and text change on hover */}
+          {/* Home Link with smooth underline and text change on hover */}
           <Link href="/"><span className="nav-link">Home</span></Link>
 
-          {/* Play Link with smooth yellow underline and text change on hover */}
+          {/* Play Link with smooth underline */}
           <Link href="/play"><span className="nav-link">Play</span></Link>
 
-          {/* Leaderboard Link with smooth yellow underline and text change on hover */}
+          {/* Leaderboard Link with smooth underline */}
           <Link href="/leaderboard"><span className="nav-link">Leaderboard</span></Link>
 
         </div>
@@ -84,7 +84,7 @@ export default function Navbar() {
             />
 
             {/* username */}
-            <span className="text-[#5C4033] font-medium">{username}</span> {/* dark brown color */}
+            <span className="text-white font-medium">{username}</span>
 
           </div>
 
@@ -128,6 +128,7 @@ export default function Navbar() {
         .logo-moving {
           display: inline-block; /* ensures transform works */
           animation: logoMove 2s ease-in-out infinite;
+          color: white; /* logo text white */
         }
 
         /* Smooth underline hover effect for nav links and text color change */
@@ -136,6 +137,7 @@ export default function Navbar() {
           display: inline-block;
           padding-bottom: 2px; /* spacing between text and underline */
           transition: color 0.3s ease-in-out; /* smooth text color change */
+          color: white; /* nav links white */
         }
 
         /* underline pseudo-element, starts hidden */
@@ -146,17 +148,17 @@ export default function Navbar() {
           bottom: 0;
           width: 0%;
           height: 2px;
-          background-color: #facc15; /* yellow underline on hover */
+          background-color: white; /* white underline on hover */
           transition: width 0.3s ease-in-out; /* smooth expand */
         }
 
-        /* expand yellow underline and change text color to yellow on hover */
+        /* expand underline on hover */
         .nav-link:hover::after {
           width: 100%;
         }
 
         .nav-link:hover {
-          color: #ffe476; /* text turns yellow on hover */
+          color: #fff; /* keep white on hover */
         }
       `}</style>
 
