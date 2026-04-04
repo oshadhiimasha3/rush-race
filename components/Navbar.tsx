@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { audioEngine } from "@/lib/audioEngine"; // Adjust the import path as needed
 
 export default function Navbar() {
 
@@ -10,6 +11,9 @@ export default function Navbar() {
 
   // store username of logged-in user
   const [username,setUsername] = useState("Player");
+
+  // state for music button
+  const [isMusicOn, setIsMusicOn] = useState(true);
 
   // fetch current user info when component mounts
   useEffect(()=>{
@@ -29,13 +33,36 @@ export default function Navbar() {
 
     fetchUser()
 
-  },[])
+    // Initialize music state from audioEngine
+    setIsMusicOn(audioEngine.isBgMusicEnabled());
 
+    // Resume audio context on first user interaction
+    const handleFirstInteraction = async () => {
+      await audioEngine.resumeContext();
+      // Remove listener after first interaction
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+    
+    document.addEventListener('click', handleFirstInteraction);
+    document.addEventListener('keydown', handleFirstInteraction);
+
+    return () => {
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+  },[])
 
   // handle user logout
   const handleLogout = async () => {
     await fetch("/api/auth/logout",{ method:"POST" })
     window.location.href = "/login"
+  }
+
+  // handle music toggle
+  const handleMusicToggle = () => {
+    const newState = audioEngine.toggleBgMusic();
+    setIsMusicOn(newState);
   }
 
   // logo text
@@ -67,6 +94,21 @@ export default function Navbar() {
           <Link href="/leaderboard"><span className="nav-link">Leaderboard</span></Link>
 
         </div>
+
+        {/* MUSIC TOGGLE BUTTON */}
+        <button
+          onClick={handleMusicToggle}
+          className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-lg hover:bg-white/20 transition-all duration-200 cursor-pointer group"
+          title={isMusicOn ? "Turn music off" : "Turn music on"}
+        >
+          <span className="text-xl">
+            {isMusicOn ? "🎵" : "🔇"}
+          </span>
+          <span className="text-white/90 font-medium text-sm hidden sm:inline">
+            {isMusicOn ? "Music On" : "Music Off"}
+          </span>
+          <span className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-[0_0_12px_rgba(250,204,21,0.3)] pointer-events-none"></span>
+        </button>
 
         {/* USER PROFILE */}
         <div className="relative">

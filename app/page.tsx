@@ -14,8 +14,8 @@ export default function Home() {
   const [leaders, setLeaders] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
     async function fetchLeaderboard() {
@@ -31,6 +31,37 @@ export default function Home() {
       }
     }
     fetchLeaderboard();
+  }, []);
+
+  // Custom cursor tracking
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePos(prev => ({
+        x: prev.x + (e.clientX - prev.x) * 0.2,
+        y: prev.y + (e.clientY - prev.y) * 0.2,
+      }));
+    };
+
+    const handleMouseEnter = () => setIsHovering(true);
+    const handleMouseLeave = () => setIsHovering(false);
+
+    // Track all interactive elements
+    const interactiveElements = document.querySelectorAll('button, a, [role="button"], .coin-card, .nav-link');
+    
+    interactiveElements.forEach(el => {
+      el.addEventListener('mouseenter', handleMouseEnter);
+      el.addEventListener('mouseleave', handleMouseLeave);
+    });
+
+    window.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      interactiveElements.forEach(el => {
+        el.removeEventListener('mouseenter', handleMouseEnter);
+        el.removeEventListener('mouseleave', handleMouseLeave);
+      });
+    };
   }, []);
 
   let currentRank = 1;
@@ -96,7 +127,34 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="relative min-h-screen flex flex-col text-white overflow-x-hidden">
+    <div className="relative min-h-screen flex flex-col text-white overflow-x-hidden cursor-none">
+      
+      {/* Custom Banana Cursor */}
+      <div 
+        className="fixed pointer-events-none z-[9999] transition-transform duration-100 ease-out"
+        style={{
+          left: `${mousePos.x}px`,
+          top: `${mousePos.y}px`,
+          transform: 'translate(-20%, -20%)'
+        }}
+      >
+        <div className={`relative transition-all duration-200 ${isHovering ? 'scale-150' : 'scale-100'}`}>
+          {/* Realistic Banana Shape */}
+          <img
+            src="/banana.png"
+            alt="banana cursor"
+            className="pointer-events-none select-none"
+            style={{
+              width: isHovering ? "55px" : "40px",
+              height: "auto",
+              transform: isHovering ? "rotate(25deg)" : "rotate(15deg)",
+              transition: "all 0.2s ease"
+            }}
+          />
+          {/* Hover ring effect */}
+          <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-yellow-400 transition-all duration-200 ${isHovering ? 'w-14 h-14 opacity-100' : 'w-0 h-0 opacity-0'}`}></div>
+        </div>
+      </div>
 
       {/* VIDEO (behind everything) */}
       <div className="fixed top-0 left-0 w-full h-[120vh] overflow-hidden -z-20">

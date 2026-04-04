@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { getPuzzle } from "../lib/bananaAPI";
 import TimerBar from "./TimerBar";
+import { useSound } from "../context/SoundContext";
 
 export default function GameBoard({ userId }: { userId: string }) {
 
@@ -10,6 +11,11 @@ export default function GameBoard({ userId }: { userId: string }) {
   const MIN_TIME = 5;
   const TIME_DECREMENT = 5;
   const BASE_SCORE = 10;
+
+  const sounds = useSound();
+
+  // Tracks the last integer second at which a time-warning sound was played
+  const lastWarnSecRef = useRef<number>(-1);
 
   //State Variables
   const [puzzle, setPuzzle] = useState<any>(null);
@@ -30,6 +36,7 @@ export default function GameBoard({ userId }: { userId: string }) {
     const data = await getPuzzle(stage); //fetches puzzle from API
     setPuzzle(data);
     setFeedback("");
+    lastWarnSecRef.current = -1; // reset countdown warning tracker
 
     //Determines time limit for puzzle
     const newTimeLimit = isFirst
@@ -46,6 +53,7 @@ export default function GameBoard({ userId }: { userId: string }) {
     if(gameOver) return;
 
     if(timeLeft <= 0){
+      sounds.playGameOver(); // time's-up sound
       setGameOver(true);
       setFeedback("⏰ Time's Up! Game Over");
       setCombo(0);
@@ -56,6 +64,19 @@ export default function GameBoard({ userId }: { userId: string }) {
     timerRef.current = setTimeout(()=>setTimeLeft(timeLeft - 0.1),100); //Decreases timeLeft by 0.1 seconds every 100ms.
     return ()=>clearTimeout(timerRef.current);
   },[timeLeft,gameOver]);
+
+  // Countdown warning ticks at 3 s, 2 s, 1 s remaining
+  useEffect(()=>{
+    if(gameOver || timeLeft <= 0) return;
+    const sec = Math.ceil(timeLeft);
+    if(sec <= 10 && sec !== lastWarnSecRef.current){
+      lastWarnSecRef.current = sec;
+      sounds.playTimeWarning();
+    }
+    if(sec > 10){
+      lastWarnSecRef.current = -1; // reset when outside warning zone
+    }
+  },[timeLeft, gameOver]);
 
   async function updateScore(finalScore:number){
     try{
@@ -74,6 +95,17 @@ export default function GameBoard({ userId }: { userId: string }) {
       const newCombo = combo + 1
       const newScore = score + BASE_SCORE * (1 + combo * 0.5) //Score is BASE_SCORE multiplied by combo bonus.
 
+      // Detect stage transition so we can play the appropriate sound
+      const willStageUp =
+        (newScore >= 100 && stage !== 3) ||
+        (newScore >= 50 && stage === 1 && newScore < 100);
+
+      if(willStageUp){
+        sounds.playStageUp();
+      } else {
+        sounds.playCorrect();
+      }
+
       setCombo(newCombo)
       setScore(newScore)
       setCoins(coins + 10)
@@ -87,6 +119,7 @@ export default function GameBoard({ userId }: { userId: string }) {
 
       setTimeout(()=>loadPuzzle(),1200)
     } else {
+      sounds.playWrong();
       setFeedback("❌ Wrong! Game Over")
       setCombo(0)
       setGameOver(true)
@@ -99,6 +132,7 @@ export default function GameBoard({ userId }: { userId: string }) {
   function restartGame(useCoins:boolean=false){
     if(useCoins){
       if(coins < 30){
+        sounds.playWrong(); // not enough coins
         setFeedback("❌ Not enough coins to continue!");
         return;
       }
@@ -106,6 +140,7 @@ export default function GameBoard({ userId }: { userId: string }) {
       setGameOver(false);
       setFeedback("💪 Continued! Good luck!");
       setTimeLeft(START_TIME);
+      lastWarnSecRef.current = -1;
       return;
     }
 
@@ -115,6 +150,7 @@ export default function GameBoard({ userId }: { userId: string }) {
     setCorrectAnswers(0)
     setCurrentTimeLimit(START_TIME)
     setTimeLeft(START_TIME)
+    lastWarnSecRef.current = -1;
     setStage(1); 
     setGameOver(false)
     loadPuzzle(true)
@@ -122,9 +158,11 @@ export default function GameBoard({ userId }: { userId: string }) {
 
   function skipPuzzle(){
     if(coins < 20){
+      sounds.playWrong(); // not enough coins
       setFeedback("❌ Not enough coins to skip!");
       return;
     }
+    sounds.playSkip();
     setCoins(coins - 20);
     loadPuzzle();
     setFeedback("⏩ Puzzle Skipped!");
