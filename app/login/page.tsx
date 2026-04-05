@@ -8,14 +8,14 @@ export default function LoginPage() {
 
   const router = useRouter()
 
-  const [email,setEmail] = useState("") //store user input
-  const [password,setPassword] = useState("") //store user input
+  const [email,setEmail] = useState("")
+  const [password,setPassword] = useState("")
   const [error,setError] = useState("")
   const [loading,setLoading] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
 
-    e.preventDefault() //stops the page from refreshing when the form is submitted.
+    e.preventDefault()
 
     setLoading(true)
     setError("")
@@ -28,7 +28,7 @@ export default function LoginPage() {
           "Content-Type":"application/json"
         },
         body: JSON.stringify({
-          email,   //backend verifies the details
+          email,
           password
         })
       })
@@ -52,10 +52,11 @@ export default function LoginPage() {
         return
       }
 
-      // success case
+      // ✅ success case
       alert("Login successful")
 
-      router.replace("/play")
+      // ✅ FIXED REDIRECT
+      router.replace("/game-map")
 
     } catch {
       setError("Something went wrong")
@@ -121,7 +122,6 @@ export default function LoginPage() {
         )}
 
         {/* button */}
-        
         <button
           type="submit"
           className="
@@ -132,9 +132,9 @@ export default function LoginPage() {
             font-semibold 
             self-center
           "     
->
-  {loading ? "Logging in..." : "Login"}
-</button>
+        >
+          {loading ? "Logging in..." : "Login"}
+        </button>
 
         {/* go to register */}
         <p className="text-sm text-center text-gray-600">

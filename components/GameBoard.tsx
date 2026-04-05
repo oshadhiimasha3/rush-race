@@ -1,311 +1,216 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { getPuzzle } from "../lib/bananaAPI";
 import TimerBar from "./TimerBar";
 import { useSound } from "../context/SoundContext";
+import { Stage } from "../lib/stages";
 
-export default function GameBoard({ userId }: { userId: string }) {
-
-  const START_TIME = 30;
-  const MIN_TIME = 5;
-  const TIME_DECREMENT = 5;
+export default function GameBoard({
+  userId,
+  stageConfig,
+}: {
+  userId: string;
+  stageConfig: Stage;
+}) {
   const BASE_SCORE = 10;
-
   const sounds = useSound();
-
-  // Tracks the last integer second at which a time-warning sound was played
+  const router = useRouter();
   const lastWarnSecRef = useRef<number>(-1);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  //State Variables
   const [puzzle, setPuzzle] = useState<any>(null);
   const [answer, setAnswer] = useState("");
   const [score, setScore] = useState(0);
   const [coins, setCoins] = useState(0);
   const [feedback, setFeedback] = useState("");
-  const [timeLeft, setTimeLeft] = useState(START_TIME);
+  const [timeLeft, setTimeLeft] = useState(stageConfig.time);
   const [combo, setCombo] = useState(0);
   const [gameOver, setGameOver] = useState(false);
-  const [currentTimeLimit, setCurrentTimeLimit] = useState(START_TIME);
   const [correctAnswers, setCorrectAnswers] = useState(0);
-  const [stage, setStage] = useState(1); // 1, 2, 3
+  const [puzzlesSolved, setPuzzlesSolved] = useState(0);
 
-  const timerRef = useRef<any>(null); //stores reference to the timer to clear it when needed.
-
-  async function loadPuzzle(isFirst = false){
-    const data = await getPuzzle(stage); //fetches puzzle from API
+  // ================= LOAD PUZZLE =================
+  async function loadPuzzle() {
+    const data = await getPuzzle(stageConfig.id); // ✅ keep API same
     setPuzzle(data);
     setFeedback("");
-    lastWarnSecRef.current = -1; // reset countdown warning tracker
-
-    //Determines time limit for puzzle
-    const newTimeLimit = isFirst
-      ? START_TIME
-      : Math.max(MIN_TIME, currentTimeLimit - TIME_DECREMENT);
-
-    setCurrentTimeLimit(newTimeLimit);
-    setTimeLeft(newTimeLimit); //Updates currentTimeLimit and timeLeft
+    setTimeLeft(stageConfig.time);
+    lastWarnSecRef.current = -1;
   }
 
-  useEffect(()=>{ loadPuzzle(true); },[stage]); //Loads a puzzle whenever the stage changes
+  useEffect(() => {
+    loadPuzzle();
+  }, [stageConfig.id]);
 
-  useEffect(()=>{
-    if(gameOver) return;
+  // ================= TIMER =================
+  useEffect(() => {
+    if (gameOver) return;
 
-    if(timeLeft <= 0){
-      sounds.playGameOver(); // time's-up sound
+    if (timeLeft <= 0) {
+      sounds.playGameOver();
       setGameOver(true);
       setFeedback("⏰ Time's Up! Game Over");
-      setCombo(0);
       updateScore(score);
       return;
     }
 
-    timerRef.current = setTimeout(()=>setTimeLeft(timeLeft - 0.1),100); //Decreases timeLeft by 0.1 seconds every 100ms.
-    return ()=>clearTimeout(timerRef.current);
-  },[timeLeft,gameOver]);
+    timerRef.current = setTimeout(() => setTimeLeft((prev) => prev - 0.1), 100);
 
-  // Countdown warning ticks at 3 s, 2 s, 1 s remaining
-  useEffect(()=>{
-    if(gameOver || timeLeft <= 0) return;
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [timeLeft, gameOver]);
+
+  // ================= WARNING SOUND =================
+  useEffect(() => {
+    if (gameOver || timeLeft <= 0) return;
+
     const sec = Math.ceil(timeLeft);
-    if(sec <= 10 && sec !== lastWarnSecRef.current){
+    if (sec <= 10 && sec !== lastWarnSecRef.current) {
       lastWarnSecRef.current = sec;
       sounds.playTimeWarning();
     }
-    if(sec > 10){
-      lastWarnSecRef.current = -1; // reset when outside warning zone
-    }
-  },[timeLeft, gameOver]);
+    if (sec > 10) lastWarnSecRef.current = -1;
+  }, [timeLeft, gameOver]);
 
-  async function updateScore(finalScore:number){
-    try{
-      await fetch("/api/game/updateScore",{
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body:JSON.stringify({ userId, score:finalScore, correctAnswers, stage })
-      })
-    }catch{ console.log("Score update failed") }
+  // ================= SCORE SAVE =================
+  async function updateScore(finalScore: number) {
+    try {
+      await fetch("/api/game/updateScore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          score: finalScore,
+          correctAnswers,
+          stage: stageConfig.id,
+        }),
+      });
+    } catch {
+      console.log("Score update failed");
+    }
   }
 
-  function submit(){
-    if(!puzzle || gameOver) return; //If no puzzle is loaded or game is over do nothing.
+  // ================= SAVE STAGE PROGRESS =================
+  const saveProgress = () => {
+    const completedStages = JSON.parse(localStorage.getItem("completedStages") || "[]");
+    if (!completedStages.includes(stageConfig.id)) {
+      completedStages.push(stageConfig.id);
+      localStorage.setItem("completedStages", JSON.stringify(completedStages));
+    }
+  };
 
-    if(parseInt(answer) === puzzle.solution){ // checking the solution
-      const newCombo = combo + 1
-      const newScore = score + BASE_SCORE * (1 + combo * 0.5) //Score is BASE_SCORE multiplied by combo bonus.
+  // ================= SUBMIT =================
+  function submit() {
+    if (!puzzle || gameOver) return;
 
-      // Detect stage transition so we can play the appropriate sound
-      const willStageUp =
-        (newScore >= 100 && stage !== 3) ||
-        (newScore >= 50 && stage === 1 && newScore < 100);
+    if (parseInt(answer) === puzzle.solution) {
+      sounds.playCorrect();
 
-      if(willStageUp){
+      const newSolved = puzzlesSolved + 1;
+      const newScore = score + BASE_SCORE * (1 + combo * 0.5);
+
+      setPuzzlesSolved(newSolved);
+      setScore(newScore);
+      setCombo(combo + 1);
+      setCoins(coins + 10);
+      setCorrectAnswers((prev) => prev + 1);
+
+      // ✅ STAGE COMPLETE
+      if (newSolved >= stageConfig.puzzles) {
         sounds.playStageUp();
-      } else {
-        sounds.playCorrect();
-      }
+        setGameOver(true);
+        setFeedback("🎉 Stage Completed!");
+        updateScore(newScore);
+        saveProgress();
 
-      setCombo(newCombo)
-      setScore(newScore)
-      setCoins(coins + 10)
-      setCorrectAnswers(prev => prev + 1)
-      setFeedback(`✅ Correct! +10 Coins! Combo x${newCombo}`)
-
-      // ================= Auto Stage Progression =================
-      if(newScore >= 100 && stage !== 3) setStage(3);
-      else if(newScore >= 50 && stage === 1) setStage(2);
-      // ==========================================================
-
-      setTimeout(()=>loadPuzzle(),1200)
-    } else {
-      sounds.playWrong();
-      setFeedback("❌ Wrong! Game Over")
-      setCombo(0)
-      setGameOver(true)
-      updateScore(score)
-    }
-
-    setAnswer("")
-  }
-
-  function restartGame(useCoins:boolean=false){
-    if(useCoins){
-      if(coins < 30){
-        sounds.playWrong(); // not enough coins
-        setFeedback("❌ Not enough coins to continue!");
+        // redirect back to map after short delay
+        setTimeout(() => router.push("/game-map"), 1500);
         return;
       }
-      setCoins(coins - 30);
-      setGameOver(false);
-      setFeedback("💪 Continued! Good luck!");
-      setTimeLeft(START_TIME);
-      lastWarnSecRef.current = -1;
-      return;
+
+      setFeedback(`✅ Correct! (${newSolved}/${stageConfig.puzzles})`);
+      setTimeout(() => loadPuzzle(), 1000);
+    } else {
+      sounds.playWrong();
+      setFeedback("❌ Wrong! Game Over");
+      setGameOver(true);
+      setCombo(0);
+      updateScore(score);
     }
 
-    setScore(0)
-    setCoins(0)
-    setCombo(0)
-    setCorrectAnswers(0)
-    setCurrentTimeLimit(START_TIME)
-    setTimeLeft(START_TIME)
-    lastWarnSecRef.current = -1;
-    setStage(1); 
-    setGameOver(false)
-    loadPuzzle(true)
+    setAnswer("");
   }
 
-  function skipPuzzle(){
-    if(coins < 20){
-      sounds.playWrong(); // not enough coins
-      setFeedback("❌ Not enough coins to skip!");
+  // ================= RESTART =================
+  function restartGame() {
+    setScore(0);
+    setCoins(0);
+    setCombo(0);
+    setCorrectAnswers(0);
+    setPuzzlesSolved(0);
+    setGameOver(false);
+    loadPuzzle();
+  }
+
+  // ================= SKIP =================
+  function skipPuzzle() {
+    if (coins < 20) {
+      sounds.playWrong();
+      setFeedback("❌ Not enough coins!");
       return;
     }
+
     sounds.playSkip();
     setCoins(coins - 20);
     loadPuzzle();
-    setFeedback("⏩ Puzzle Skipped!");
   }
 
-  // ========== Calculate banana progress position ==========
-  const maxScore = 150; // maximum score considered
-  const progressPercent = Math.min((score / maxScore) * 100, 100);
+  // ================= UI =================
+  return (
+    <div className="flex flex-col items-center justify-start pt-6 px-4 pb-10 w-full">
+      <h1 className="text-3xl font-bold mb-4 text-white">🍌 {stageConfig.name}</h1>
+      <p className="mb-4 text-white">
+        Progress: {puzzlesSolved} / {stageConfig.puzzles}
+      </p>
+      <div className="mb-4 text-white text-xl">Score: {score}</div>
 
-  // ========== Stage dot positions based on score thresholds ==========
-  const stageThresholds = [0, 50, 100]; // scores where stages start
-  const stagePositions = stageThresholds.map(threshold => Math.min((threshold / maxScore) * 100, 100));
-
-  return(
-    <div className="flex flex-col items-center justify-start pt-4 px-4 pb-8 w-full">
-
-      {/* =================== Banana Progress Bar =================== */}
-      <div className="mb-6 w-full max-w-2xl">
-        <div className="relative h-6 w-full flex items-center">
-          {/* Background line with gradient */}
-          <div className="absolute top-3 h-2 w-full rounded-full bg-gradient-to-r from-yellow-200 via-yellow-300 to-pink-200" />
-
-          {/* Stage dots integrated into the bar */}
-          {stagePositions.map((pos, idx) => (
-            <span
-              key={idx}
-              className="absolute w-3 h-3 rounded-full bg-[orange]"
-              style={{ left: `${pos}%`, transform: `translateX(-50%)` }}
-            />
-          ))}
-
-          {/* Banana emoji */}
-          <span
-            className="absolute -top-2 text-2xl transition-left duration-500"
-            style={{ left: `${progressPercent}%`, transform: `translateX(-50%)` }}
-          >
-            🍌
-          </span>
-        </div>
-
-        {/* Stage labels aligned under their dots */}
-        <div className="relative w-full h-6 mt-2 mb-4.5">
-          {stagePositions.map((pos, idx) => (
-            <span
-              key={idx}
-              className="absolute text-gray-700 text-sm font-semibold"
-              style={{ left: `${pos}%`, transform: `translateX(-50%)` }}
-            >
-              Stage {idx + 1}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* =================== Score & Coins HUD =================== */}
-      <div className="mb-4 flex items-center gap-6 justify-center w-full max-w-md">
-        <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white px-6 py-3 rounded-2xl shadow-lg text-center animate-pulse w-36">
-          <h2 className="text-lg font-bold">Score: {score.toFixed(0)}</h2>
-        </div>
-
-        <div className="flex items-center gap-2 bg-yellow-200/80 px-4 py-2 rounded-2xl shadow-lg justify-center w-36">
-          <span className="text-yellow-400 text-3xl animate-bounce-glow"
-            style={{ textShadow:"0 0 5px #fff, 0 0 10px #ffeb3b, 0 0 20px #ffeb3b, 0 0 30px #ffeb3b" }}>🪙</span>
-          <span className="text-gray-900 font-bold text-xl animate-bounce-glow">x{coins}</span>
-        </div>
-      </div>
-
-      {/* =================== Puzzle Box =================== */}
-      <div className="bg-yellow-50/80 backdrop-blur-md p-6 rounded-3xl shadow-2xl flex flex-col items-center w-full max-w-lg mb-6">
-        {puzzle && (
-          <img
-            src={puzzle.question} //puzzle image
-            alt="Puzzle"
-            className="w-full h-auto rounded-xl shadow-lg mb-4"
-            style={{ maxHeight: "500px", objectFit: "contain" }}
-          />
-        )}
-
+      <div className="bg-yellow-100 p-6 rounded-xl w-full max-w-md text-center">
+        {puzzle && <img src={puzzle.question} alt="Puzzle" className="w-full mb-4 rounded-lg" />}
         {!gameOver && (
           <>
-            <div className="w-full mb-4">
-              <div className="flex justify-between mb-1 text-gray-800 font-bold">
-                <span>Time Left:</span>
-                <span>{timeLeft.toFixed(1)}s</span>
-              </div>
-              <TimerBar time={timeLeft} maxTime={currentTimeLimit}/>
-            </div>
-
-            {/* Skip Puzzle */}
-            <button
-              onClick={skipPuzzle}
-              className="w-full py-3 bg-orange-400 text-black font-bold rounded-xl hover:bg-orange-500 active:scale-95 transition-transform duration-150 shadow-lg"
-            >
-              Skip Puzzle (-20 Coins)
+            <p className="mb-2 font-bold">Time: {timeLeft.toFixed(1)}s</p>
+            <TimerBar time={timeLeft} maxTime={stageConfig.time} />
+            <button onClick={skipPuzzle} className="mt-3 w-full bg-orange-400 py-2 rounded-lg">
+              Skip (-20 coins)
             </button>
           </>
         )}
       </div>
 
-      {/* =================== Answer & Actions Box =================== */}
-      <div className="bg-yellow-100/90 backdrop-blur-md p-6 rounded-3xl shadow-2xl flex flex-col items-center w-full max-w-lg space-y-4">
+      <div className="mt-4 w-full max-w-md">
         <input
           value={answer}
-          onChange={(e)=>setAnswer(e.target.value)}
-          placeholder="Enter your answer"
-          className="w-full px-4 py-3 rounded-xl border-2 border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-300 text-gray-900 font-semibold bg-yellow-50 placeholder:text-gray-500 transition duration-200"
+          onChange={(e) => setAnswer(e.target.value)}
+          placeholder="Enter answer"
+          className="w-full p-3 rounded-lg border"
           disabled={gameOver}
         />
 
         {!gameOver ? (
-          <button
-            onClick={submit}
-            className="w-full py-3 bg-yellow-400 text-black font-bold rounded-xl hover:bg-yellow-500 active:scale-95 transition-transform duration-150 shadow-lg"
-          >
+          <button onClick={submit} className="mt-3 w-full bg-yellow-400 py-3 rounded-lg">
             Submit
           </button>
         ) : (
-          <div className="flex flex-col gap-3 w-full">
-            <button
-              onClick={()=>restartGame()}
-              className="w-full py-3 bg-red-500 text-white font-bold hover:bg-red-600 rounded-xl active:scale-95 transition-transform duration-150 shadow-lg"
-            >
-              Restart Game
-            </button>
-            <button
-              onClick={()=>restartGame(true)}
-              className="w-full py-3 bg-yellow-400 text-black font-bold hover:bg-yellow-500 rounded-xl active:scale-95 transition-transform duration-150 shadow-lg"
-            >
-              Continue Game (-30 Coins)
-            </button>
-          </div>
+          <button onClick={restartGame} className="mt-3 w-full bg-red-500 py-3 rounded-lg text-white">
+            Restart Stage
+          </button>
         )}
 
-        {feedback && (
-          <p
-            className={`mt-2 font-semibold ${
-              feedback.includes("✅") ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {feedback}
-          </p>
-        )}
+        {feedback && <p className="mt-3 font-bold text-center">{feedback}</p>}
       </div>
     </div>
-  )
+  );
 }
