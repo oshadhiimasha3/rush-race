@@ -33,7 +33,7 @@ export default function GameBoard({
 
   // ================= LOAD PUZZLE =================
   async function loadPuzzle() {
-    const data = await getPuzzle(stageConfig.id); // ✅ keep API same
+    const data = await getPuzzle(stageConfig.id);
     setPuzzle(data);
     setFeedback("");
     setTimeLeft(stageConfig.time);
@@ -118,7 +118,6 @@ export default function GameBoard({
       setCoins(coins + 10);
       setCorrectAnswers((prev) => prev + 1);
 
-      // ✅ STAGE COMPLETE
       if (newSolved >= stageConfig.puzzles) {
         sounds.playStageUp();
         setGameOver(true);
@@ -126,7 +125,6 @@ export default function GameBoard({
         updateScore(newScore);
         saveProgress();
 
-        // redirect back to map after short delay
         setTimeout(() => router.push("/game-map"), 1500);
         return;
       }
@@ -168,7 +166,6 @@ export default function GameBoard({
     loadPuzzle();
   }
 
-  // ================= TIME FORMATTING =================
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
@@ -177,57 +174,67 @@ export default function GameBoard({
 
   // ================= UI =================
   return (
-    <div className="flex flex-col items-center justify-start pt-6 px-4 pb-10 w-full">
-      <h1 className="text-3xl font-bold mb-4 text-white">🍌 {stageConfig.name}</h1>
-      <p className="mb-4 text-white">
-        Progress: {puzzlesSolved} / {stageConfig.puzzles}
-      </p>
-      <div className="mb-4 text-white text-xl">Score: {score}</div>
+    <div className="relative min-h-screen flex flex-col items-center justify-start px-6 py-8 bg-purple-900/80 backdrop-blur-md text-white">
 
-      <div className="bg-yellow-100 p-6 rounded-xl w-full max-w-md text-center">
-        {puzzle && (
-          <img src={puzzle.question} alt="Puzzle" className="w-full mb-4 rounded-lg" />
-        )}
-        {!gameOver && (
-          <>
-            <p className="mb-2 font-bold">Time: {formatTime(timeLeft)}</p>
-            <TimerBar time={timeLeft} maxTime={stageConfig.time} />
-            <button
-              onClick={skipPuzzle}
-              className="mt-3 w-full bg-orange-400 py-2 rounded-lg"
-            >
-              Skip (-20 coins)
-            </button>
-          </>
-        )}
+      <h1 className="text-4xl font-bold mb-6 text-center drop-shadow-lg">🍌 {stageConfig.name}</h1>
+
+      <div className="flex flex-col md:flex-row gap-6 w-full max-w-3xl mb-6">
+        <div className="flex-1 bg-white/10 backdrop-blur-md p-4 rounded-2xl shadow-lg">
+          <p className="text-lg mb-2">Progress: {puzzlesSolved} / {stageConfig.puzzles}</p>
+          <p className="text-lg mb-2">Score: {score}</p>
+          <p className="text-lg">Coins: {coins}</p>
+        </div>
+
+        <div className="flex-1 bg-white/10 backdrop-blur-md p-4 rounded-2xl shadow-lg text-center">
+          {!gameOver && (
+            <>
+              <p className="text-lg mb-2 font-bold">Time: {formatTime(timeLeft)}</p>
+              <TimerBar time={timeLeft} maxTime={stageConfig.time} />
+              <button
+                onClick={skipPuzzle}
+                className="mt-4 w-full py-2 rounded-lg bg-purple-600/50 hover:bg-purple-500/70 transition-colors duration-200"
+              >
+                Skip (-20 coins)
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
-      <div className="mt-4 w-full max-w-md">
+      <div className="w-full max-w-md bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-lg mb-6">
+        {puzzle && (
+          <img src={puzzle.question} alt="Puzzle" className="w-full rounded-xl mb-4" />
+        )}
         <input
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
           placeholder="Enter answer"
-          className="w-full p-3 rounded-lg border"
           disabled={gameOver}
+          className="w-full p-3 rounded-lg border border-white/30 bg-white/10 text-white placeholder-white/70 mb-4"
         />
-
         {!gameOver ? (
           <button
             onClick={submit}
-            className="mt-3 w-full bg-yellow-400 py-3 rounded-lg"
+            className="w-full py-3 rounded-lg bg-purple-500/70 hover:bg-purple-400/80 text-white font-bold transition-all duration-200 mb-2"
           >
             Submit
           </button>
         ) : (
           <button
             onClick={restartGame}
-            className="mt-3 w-full bg-red-500 py-3 rounded-lg text-white"
+            className="w-full py-3 rounded-lg bg-red-500/70 hover:bg-red-400/80 text-white font-bold transition-all duration-200 mb-2"
           >
             Restart Stage
           </button>
         )}
+        <button
+          onClick={() => router.push("/game-map")}
+          className="w-full py-3 rounded-lg bg-purple-700/50 hover:bg-purple-600/70 text-white font-bold transition-all duration-200 mt-2"
+        >
+          Back to Map
+        </button>
 
-        {feedback && <p className="mt-3 font-bold text-center">{feedback}</p>}
+        {feedback && <p className="mt-4 text-center text-lg font-semibold">{feedback}</p>}
       </div>
     </div>
   );
