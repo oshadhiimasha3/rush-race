@@ -168,6 +168,13 @@ export default function GameBoard({
     loadPuzzle();
   }
 
+  // ================= TIME FORMATTING =================
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  };
+
   // ================= UI =================
   return (
     <div className="flex flex-col items-center justify-start pt-6 px-4 pb-10 w-full">
@@ -178,12 +185,17 @@ export default function GameBoard({
       <div className="mb-4 text-white text-xl">Score: {score}</div>
 
       <div className="bg-yellow-100 p-6 rounded-xl w-full max-w-md text-center">
-        {puzzle && <img src={puzzle.question} alt="Puzzle" className="w-full mb-4 rounded-lg" />}
+        {puzzle && (
+          <img src={puzzle.question} alt="Puzzle" className="w-full mb-4 rounded-lg" />
+        )}
         {!gameOver && (
           <>
-            <p className="mb-2 font-bold">Time: {timeLeft.toFixed(1)}s</p>
+            <p className="mb-2 font-bold">Time: {formatTime(timeLeft)}</p>
             <TimerBar time={timeLeft} maxTime={stageConfig.time} />
-            <button onClick={skipPuzzle} className="mt-3 w-full bg-orange-400 py-2 rounded-lg">
+            <button
+              onClick={skipPuzzle}
+              className="mt-3 w-full bg-orange-400 py-2 rounded-lg"
+            >
               Skip (-20 coins)
             </button>
           </>
@@ -200,11 +212,17 @@ export default function GameBoard({
         />
 
         {!gameOver ? (
-          <button onClick={submit} className="mt-3 w-full bg-yellow-400 py-3 rounded-lg">
+          <button
+            onClick={submit}
+            className="mt-3 w-full bg-yellow-400 py-3 rounded-lg"
+          >
             Submit
           </button>
         ) : (
-          <button onClick={restartGame} className="mt-3 w-full bg-red-500 py-3 rounded-lg text-white">
+          <button
+            onClick={restartGame}
+            className="mt-3 w-full bg-red-500 py-3 rounded-lg text-white"
+          >
             Restart Stage
           </button>
         )}

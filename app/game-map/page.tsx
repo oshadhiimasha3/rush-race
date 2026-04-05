@@ -13,10 +13,15 @@ export default function GameMap() {
     setCompletedStages(saved);
   }, []);
 
-  // unlock logic
   const isUnlocked = (stageId: number) => {
     if (stageId === 1) return true;
     return completedStages.includes(stageId - 1);
+  };
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
   return (
@@ -38,7 +43,7 @@ export default function GameMap() {
             >
               <h2 className="text-xl font-bold">Stage {stage.id}</h2>
               <p>{stage.puzzles} puzzles</p>
-              <p>{stage.time}s timer</p>
+              <p>⏱ {formatTime(stage.time)}</p>
 
               {unlocked ? (
                 <Link href={`/play/${stage.id}`}>

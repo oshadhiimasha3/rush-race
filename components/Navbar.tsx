@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { audioEngine } from "@/lib/audioEngine"; // Adjust the import path as needed
 
 export default function Navbar() {
@@ -14,6 +15,9 @@ export default function Navbar() {
 
   // state for music button
   const [isMusicOn, setIsMusicOn] = useState(true);
+
+  // router for navigation
+  const router = useRouter();
 
   // fetch current user info when component mounts
   useEffect(()=>{
@@ -39,7 +43,6 @@ export default function Navbar() {
     // Resume audio context on first user interaction
     const handleFirstInteraction = async () => {
       await audioEngine.resumeContext();
-      // Remove listener after first interaction
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('keydown', handleFirstInteraction);
     };
@@ -65,6 +68,22 @@ export default function Navbar() {
     setIsMusicOn(newState);
   }
 
+  // handle play button click
+  const handlePlayClick = async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      if (res.ok) {
+        // user logged in → go to game map
+        router.push("/game-map");
+      } else {
+        // not logged in → go to login
+        router.push("/login");
+      }
+    } catch {
+      router.push("/login");
+    }
+  }
+
   // logo text
   const logoText = "🍌 RUSH RACE";
 
@@ -87,8 +106,13 @@ export default function Navbar() {
           {/* Home Link with smooth underline and text change on hover */}
           <Link href="/"><span className="nav-link">Home</span></Link>
 
-          {/* Play Link with smooth underline */}
-          <Link href="/play"><span className="nav-link">Play</span></Link>
+          {/* Play Link with smooth underline and login check */}
+          <button
+            onClick={handlePlayClick}
+            className="nav-link bg-transparent border-none cursor-pointer"
+          >
+            Play
+          </button>
 
           {/* Leaderboard Link with smooth underline */}
           <Link href="/leaderboard"><span className="nav-link">Leaderboard</span></Link>
@@ -158,7 +182,6 @@ export default function Navbar() {
 
       {/* LOGO animation & nav underline hover */}
       <style jsx>{`
-        /* Logo animation: moves back and forth with small glow */
         @keyframes logoMove {
           0%,100% { transform: translateX(0); text-shadow:0 0 2px #facc15; }
           25% { transform: translateX(3px); text-shadow:0 0 6px #facc15; }
@@ -166,23 +189,20 @@ export default function Navbar() {
           75% { transform: translateX(-3px); text-shadow:0 0 6px #facc15; }
         }
 
-        /* apply animation to logo */
         .logo-moving {
-          display: inline-block; /* ensures transform works */
-          animation: logoMove 2s ease-in-out infinite;
-          color: white; /* logo text white */
-        }
-
-        /* Smooth underline hover effect for nav links and text color change */
-        .nav-link {
-          position: relative; /* needed for ::after positioning */
           display: inline-block;
-          padding-bottom: 2px; /* spacing between text and underline */
-          transition: color 0.3s ease-in-out; /* smooth text color change */
-          color: white; /* nav links white */
+          animation: logoMove 2s ease-in-out infinite;
+          color: white;
         }
 
-        /* underline pseudo-element, starts hidden */
+        .nav-link {
+          position: relative;
+          display: inline-block;
+          padding-bottom: 2px;
+          transition: color 0.3s ease-in-out;
+          color: white;
+        }
+
         .nav-link::after {
           content: '';
           position: absolute;
@@ -190,17 +210,16 @@ export default function Navbar() {
           bottom: 0;
           width: 0%;
           height: 2px;
-          background-color: white; /* white underline on hover */
-          transition: width 0.3s ease-in-out; /* smooth expand */
+          background-color: white;
+          transition: width 0.3s ease-in-out;
         }
 
-        /* expand underline on hover */
         .nav-link:hover::after {
           width: 100%;
         }
 
         .nav-link:hover {
-          color: #fff; /* keep white on hover */
+          color: #fff;
         }
       `}</style>
 
