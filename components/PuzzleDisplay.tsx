@@ -4,7 +4,7 @@ export default function PuzzleDisplay({ src }: { src: string }) {
       src={src}
       alt="Puzzle"
       className="w-full h-auto rounded-xl shadow-lg mb-4"
-      style={{ maxHeight: "350px", objectFit: "contain" }}
+      style={{ maxHeight: "500px", objectFit: "contain" }}
     />
   );
 }

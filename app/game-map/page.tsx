@@ -2,18 +2,35 @@
 
 import Link from "next/link";
 import { STAGES } from "../../lib/stages";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Navbar from "../../components/Navbar";
 
 export default function GameMap() {
   const [completedStages, setCompletedStages] = useState<number[]>([]);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
+  const prevUserRef = useRef<string | null>(null);
+  const [userId, setUserId] = useState<string>("guest");
 
+  // Only access localStorage on client
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("completedStages") || "[]");
-    setCompletedStages(saved);
+    if (typeof window !== "undefined") {
+      const storedUserId = localStorage.getItem("userId") || "guest";
+      setUserId(storedUserId);
+
+      const savedStages = JSON.parse(localStorage.getItem("completedStages") || "[]");
+      setCompletedStages(savedStages);
+    }
   }, []);
+
+  // Reset completedStages if new user
+  useEffect(() => {
+    if (!userId) return;
+    if (prevUserRef.current !== userId) {
+      setCompletedStages([]); // new user starts fresh
+      prevUserRef.current = userId;
+    }
+  }, [userId]);
 
   const currentStageId = STAGES.find(
     (stage) =>
@@ -26,7 +43,6 @@ export default function GameMap() {
     return completedStages.includes(stageId - 1);
   };
 
-  // Format time nicely
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -36,7 +52,6 @@ export default function GameMap() {
     return `${secs} second${secs !== 1 ? "s" : ""}`;
   };
 
-  // Custom cursor tracking
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePos((prev) => ({
@@ -48,7 +63,6 @@ export default function GameMap() {
     const handleMouseEnter = () => setIsHovering(true);
     const handleMouseLeave = () => setIsHovering(false);
 
-    // Track all interactive elements
     const interactiveElements = document.querySelectorAll('a, button, [role="button"], .cursor-hover');
     interactiveElements.forEach((el) => {
       el.addEventListener("mouseenter", handleMouseEnter);
@@ -127,7 +141,6 @@ export default function GameMap() {
 
           return (
             <div key={stage.id} className="relative cursor-hover">
-              {/* CARD */}
               <Link
                 href={unlocked ? `/play/${stage.id}` : "#"}
                 className={`relative group p-6 rounded-3xl transition-transform duration-300 hover:scale-105 block border ${
@@ -136,7 +149,6 @@ export default function GameMap() {
                     : "bg-gray-500/30 opacity-50 cursor-not-allowed border-transparent"
                 }`}
               >
-                {/* Status Badge */}
                 {cleared && (
                   <span className="absolute top-3 right-3 bg-yellow-400 text-black font-bold px-2 py-0.5 rounded-md text-xs animate-twinkle">
                     CLEARED
@@ -148,16 +160,9 @@ export default function GameMap() {
                   </span>
                 )}
 
-                {/* Race number */}
                 <h2 className="text-2xl font-bold mb-1 text-center">RACE {stage.id}</h2>
-
-                {/* Glowing underline */}
                 <div className="mx-auto w-15 h-[2.5px] bg-white/40 mb-4 rounded animate-underlineGlow"></div>
-
-                {/* Arena name */}
                 <h3 className="text-lg text-center mb-3 italic text-yellow-200">{arenaNames[index]}</h3>
-
-                {/* Info Card */}
                 <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 shadow-inner">
                   <ul className="text-sm text-white text-left space-y-2">
                     <li className="flex items-start gap-2">
@@ -176,11 +181,9 @@ export default function GameMap() {
         })}
       </div>
 
-      {/* TWINKLE ANIMATION */}
       <style jsx>{`
         @keyframes twinkleGlow {
-          0%,
-          100% {
+          0%, 100% {
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.2), 0 0 5px rgba(255, 255, 255, 0.1);
             border-color: rgba(255, 255, 255, 0.3);
           }
@@ -189,23 +192,13 @@ export default function GameMap() {
             border-color: rgba(255, 255, 255, 0.9);
           }
         }
-        .animate-twinkle {
-          animation: twinkleGlow 2.5s infinite;
-        }
+        .animate-twinkle { animation: twinkleGlow 2.5s infinite; }
 
-        /* Glowing underline */
         @keyframes underlineGlow {
-          0%,
-          100% {
-            box-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
-          }
-          50% {
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-          }
+          0%, 100% { box-shadow: 0 0 5px rgba(255,255,255,0.2); }
+          50% { box-shadow: 0 0 10px rgba(255,255,255,0.5); }
         }
-        .animate-underlineGlow {
-          animation: underlineGlow 2.5s infinite;
-        }
+        .animate-underlineGlow { animation: underlineGlow 2.5s infinite; }
       `}</style>
     </div>
   );
