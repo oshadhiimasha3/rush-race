@@ -6,6 +6,9 @@ import { getPuzzle } from "../lib/bananaAPI";
 import TimerBar from "./TimerBar";
 import { useSound } from "../context/SoundContext";
 import { Stage } from "../lib/stages";
+import PauseModal from "./PauseModal";
+import GameOverModal from "./GameOverModal";
+import StageCompletedModal from "./StageCompletedModal";
 
 export default function GameBoard({
   userId,
@@ -33,6 +36,18 @@ export default function GameBoard({
     "/stage19.jpeg",
   ];
   const backgroundImage = stageBackgrounds[stageConfig.id - 1] || "";
+
+  const arenaNames = [
+  "Misty Lakehouse",
+  "Sunset Canyon",
+  "Garden of Time",
+  "Lakeside Drift",
+  "Gloomy Peaks",
+  "Speedway Bridge",
+  "Obsidian Circuit",
+  "Bluewater Bay",
+  "Icy Heights",
+];
 
   // === Game states
   const [puzzle, setPuzzle] = useState<any>(null);
@@ -151,7 +166,7 @@ export default function GameBoard({
         sounds.playStageUp();
         setStageCompleted(true);
         setGameOver(false);
-        setFeedback("🎉 Stage Completed!");
+        setFeedback(" Stage Completed!");
 
         const completed = JSON.parse(localStorage.getItem("completedStages") || "[]");
         if (!completed.includes(stageConfig.id)) {
@@ -160,7 +175,7 @@ export default function GameBoard({
         }
 
         saveScore();
-        setTimeout(() => router.push("/game-map"), 1500);
+        setTimeout(() => router.push("/game-map"), 1800);
         return;
       }
 
@@ -222,23 +237,74 @@ export default function GameBoard({
       <div className="absolute inset-0 bg-black/50 pointer-events-none"></div>
 
       {/* NAVBAR */}
-      <div className="relative z-10 w-full flex justify-between items-center px-5 py-3  bg-white/10 backdrop-blur-l border-b border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-        <button
-          onClick={() => router.push("/game-map")}
-          className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 backdrop-blur-md hover:bg-white/20 transition-all duration-300"
-        >
-           Map
-        </button>
+<div className="relative z-10 w-full flex justify-between items-center px-5 py-3 bg-white/10 backdrop-blur-l border-b border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
 
-        <h1 className="text-xl font-bold">🍌 {stageConfig.name}</h1>
+{/* LEFT BUTTON */}
+<button
+  onClick={() => router.push("/game-map")}
+  className="flex items-center h-10 rounded-lg bg-white/10 border border-white/20 backdrop-blur-md hover:bg-white/20 transition-all duration-300 px-1 gap-0"
+>
+  <img src="/mapicon.png" alt="Map Icon" className="w-25 h-25 object-contain" />
+  <span className="text-white font-medium"></span>
+</button>
 
-        <button
-          onClick={() => setPaused(!paused)}
-          className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 backdrop-blur-md hover:bg-white/20 transition-all duration-300"
-        >
-          {paused ? "▶ Resume" : "⏸ Pause"}
-        </button>
-      </div>
+  {/* CENTER TITLE */}
+  <div className="flex items-center justify-center gap-5">
+
+    {/* LEFT Twinkling Bullet */}
+    <span className="w-2.5 h-2.5 rounded-full bg-white animate-bulletGlow"></span>
+
+    {/* Constant Glow Title */}
+    <h1 className="text-xl font-bold glow-text">
+      Race Through The {arenaNames[stageConfig.id - 1] || `Race ${stageConfig.id}`}
+    </h1>
+
+    {/* RIGHT Twinkling Bullet */}
+    <span className="w-2.5 h-2.5 rounded-full bg-white animate-bulletGlow"></span>
+
+  </div>
+
+  {/* RIGHT BUTTON */}
+  <button
+    onClick={() => setPaused(!paused)}
+    className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 backdrop-blur-md hover:bg-white/20 transition-all duration-300"
+  >
+    {paused ? "▶ Resume" : "⏸ Pause"}
+  </button>
+</div>
+
+{/* NAVBAR ANIMATIONS */}
+<style jsx>{`
+  /* Constant bright glow (no animation) */
+  .glow-text {
+    text-shadow:
+      0 0 4px rgba(255,255,255,0.5),
+      0 0 8px rgba(255,255,255,0.4),
+      0 0 14px rgba(255,255,255,0.3);
+  }
+
+  @keyframes bulletGlow {
+    0%, 100% {
+      box-shadow:
+        0 0 6px rgba(255,255,255,0.6),
+        0 0 12px rgba(121, 117, 117, 0.4);
+      opacity: 0.3;
+    }
+    50% {
+      box-shadow:
+        0 0 12px rgba(255,255,255,1),
+        0 0 25px rgba(255,255,255,0.9),
+        0 0 40px rgba(255,255,255,0.7);
+      opacity: 1;
+    }
+  }
+
+  .animate-bulletGlow {
+    animation: bulletGlow 1.5s ease-in-out infinite;
+    animation-delay: 0s; 
+    animation-fill-mode: both;
+  }
+`}</style>
 
       {/* TOP STATS */}
       <style>{`
@@ -315,7 +381,7 @@ export default function GameBoard({
               className="relative mt-3 flex items-center justify-center border border-white/20 bg-white/10 text-white font-bold py-3 rounded-xl text-lg shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-105 hover:shadow-[0_0_50px_rgba(255,255,255,0.4)] transition-all duration-300"
             >
               Skip (-20 coins)
-              <span className="absolute inset-0 rounded-xl opacity-20 bg-white/20 animate-ping"></span>
+              <span className="absolute inset-0 rounded-xl opacity-20 bg-white/20 "></span>
             </button>
           )}
 
@@ -332,44 +398,31 @@ export default function GameBoard({
         </div>
       </div>
 
-      {/* PAUSE / GAME OVER Modals */}
-      {paused && !gameOver && !stageCompleted && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-white/10 backdrop-blur-lg p-10 rounded-2xl text-center">
-            <h2 className="text-3xl font-bold mb-4">⏸ Game Paused</h2>
-            <button
-              onClick={() => setPaused(false)}
-              className="px-6 py-3 bg-purple-500 rounded-xl"
-            >
-              Resume Game
-            </button>
-          </div>
-        </div>
-      )}
+{/* ---------------- MODALS ---------------- */}
 
-      {gameOver && !stageCompleted && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-white/10 backdrop-blur-lg p-10 rounded-2xl text-center shadow-2xl w-[90%] max-w-md">
-            <h2 className="text-4xl font-bold mb-4 text-red-400">💀 Game Over</h2>
-            <p className="mb-2 text-lg">Score: {score}</p>
-            <p className="mb-6 text-lg">Solved: {puzzlesSolved}</p>
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={restartGame}
-                className="py-3 rounded-xl bg-red-500 hover:bg-red-400 font-bold text-lg"
-              >
-                🔁 Retry Stage
-              </button>
-              <button
-                onClick={() => router.push("/game-map")}
-                className="py-3 rounded-xl bg-gray-700 hover:bg-gray-600 font-bold text-lg"
-              >
-                🗺 Back to Map
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+{/* PAUSE MODAL */}
+{paused && !gameOver && !stageCompleted && (
+  <PauseModal setPaused={setPaused} />
+)}
+
+{/* GAME OVER MODAL */}
+{gameOver && !stageCompleted && (
+  <GameOverModal
+    score={score}
+    puzzlesSolved={puzzlesSolved}
+    restartGame={restartGame}
+  />
+)}
+
+{/* STAGE COMPLETED MODAL */}
+{stageCompleted && !gameOver && (
+  <StageCompletedModal
+    score={score}
+    puzzlesSolved={puzzlesSolved}
+    stageId={stageConfig.id} 
+  />
+)}
+
     </div>
   );
 }

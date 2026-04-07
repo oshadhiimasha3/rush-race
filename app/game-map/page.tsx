@@ -80,15 +80,15 @@ export default function GameMap() {
   }, []);
 
   const arenaNames = [
-    "Banana Plains",
-    "Tropical Rush",
-    "Coconut Canyon",
-    "Mango Speedway",
-    "Pineapple Peak",
-    "Jungle Drift",
-    "Volcano Track",
-    "Rainforest Rally",
-    "Golden Banana Circuit",
+    "Misty Lakehouse",
+    "Sunset Canyon",
+    "Garden of Time",
+    "Lakeside Drift",
+    "Gloomy Peaks",
+    "Speedway Bridge",
+    "Obsidian Circuit",
+    "Bluewater Bay",
+    "Icy Heights",
   ];
 
   return (
