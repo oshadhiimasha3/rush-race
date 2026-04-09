@@ -221,7 +221,62 @@ export default function GameBoard({
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
-  if (loadingUser) return <div className="text-center mt-10">Loading...</div>;
+  
+ // === Loader with minimum 2-second display
+const [showLoader, setShowLoader] = useState(true);
+
+useEffect(() => {
+  // Always show loader for at least 2 seconds
+  const minDisplayTimer = setTimeout(() => {
+    setShowLoader(loadingUser); // after 2s, reflect actual loadingUser state
+  }, 2000);
+
+  return () => clearTimeout(minDisplayTimer);
+}, []); // run once on mount
+
+useEffect(() => {
+  // If 2s passed and loadingUser is false, hide loader
+  if (!loadingUser) {
+    const hideTimer = setTimeout(() => setShowLoader(false), 2000);
+    return () => clearTimeout(hideTimer);
+  }
+}, [loadingUser]);
+
+if (showLoader)
+  return (
+    <div className="relative min-h-screen flex items-center justify-center bg-[#01061C] overflow-hidden">
+      {/* Neon star background */}
+      <div className="absolute inset-0">
+        {[...Array(50)].map((_, i) => (
+          <span
+            key={i}
+            className="absolute w-[2px] h-[2px] rounded-full bg-white/80 animate-pulse-neon"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`, // small random delay
+              animationDuration: `${10 + Math.random() * 6}s`, // slower stars, 6–12s
+              opacity: 0.7 + Math.random() * 0.3,
+              boxShadow: `0 0 ${1 + Math.random() * 2}px rgba(255,255,255,0.8)`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Neon Loader */}
+      <div className="flex flex-col items-center gap-6 z-10">
+        <div className="relative w-24 h-24 rounded-full border-4 border-purple-400/30 flex items-center justify-center animate-spin-slow">
+          <div className="absolute w-20 h-20 border-4 border-t-purple-400 border-purple-400/40 rounded-full animate-spin-neon"></div>
+          <div className="absolute w-16 h-16 border-2 border-t-purple-300 border-purple-300/50 rounded-full animate-pulse-neon"></div>
+        </div>
+
+        {/* Loading Text */}
+        <p className="text-white text-xl opacity-80 tracking-wider glow-text text-center">
+          Initializing Race ...
+        </p>
+      </div>
+    </div>
+  );
 
   // === Clock color
   let timeColor = "text-white";

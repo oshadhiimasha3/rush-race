@@ -1,25 +1,40 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { audioEngine } from "@/lib/audioEngine"; // Adjust the import path as needed
+import { audioEngine } from "@/lib/audioEngine";
 
 export default function Navbar() {
 
-  // state to track if dropdown is open
   const [open,setOpen] = useState(false);
-
-  // store username of logged-in user
   const [username,setUsername] = useState("Player");
-
-  // state for music button
   const [isMusicOn, setIsMusicOn] = useState(true);
 
-  // router for navigation
+  const [showLoader, setShowLoader] = useState(false);
+  const [loadingText, setLoadingText] = useState("Initializing Race ...");
+  const [tick, setTick] = useState(0);
+
+  const profileRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownPos, setDropdownPos] = useState<{top:number,left:number}>({top:0,left:0});
+
   const router = useRouter();
 
-  // fetch current user info when component mounts
+  const handleNavigation = (path: string, text: string) => {
+    setLoadingText(text);
+    setShowLoader(true);
+    setTick(0);
+
+    setTimeout(() => {
+      if (window.location.pathname === path) {
+        window.location.href = path;
+      } else {
+        router.push(path);
+      }
+    }, 2000);
+  };
+
   useEffect(()=>{
 
     const fetchUser = async () => {
@@ -37,10 +52,8 @@ export default function Navbar() {
 
     fetchUser()
 
-    // Initialize music state from audioEngine
     setIsMusicOn(audioEngine.isBgMusicEnabled());
 
-    // Resume audio context on first user interaction
     const handleFirstInteraction = async () => {
       await audioEngine.resumeContext();
       document.removeEventListener('click', handleFirstInteraction);
@@ -56,57 +69,75 @@ export default function Navbar() {
     };
   },[])
 
-  // handle user logout
+  useEffect(() => {
+    if (!showLoader) return;
+
+    const interval = setInterval(() => {
+      setTick((t) => t + 1);
+    }, 800);
+
+    return () => clearInterval(interval);
+  }, [showLoader]);
+
+  // Calculate centered dropdown position
+  useEffect(()=>{
+    if(open && profileRef.current && dropdownRef.current){
+      const profileRect = profileRef.current.getBoundingClientRect();
+      const dropdownRect = dropdownRef.current.getBoundingClientRect();
+      const top = profileRect.bottom + 4; // small gap
+      const left = profileRect.left + profileRect.width/2 - dropdownRect.width/2;
+      setDropdownPos({top,left});
+    }
+  }, [open]);
+
   const handleLogout = async () => {
     await fetch("/api/auth/logout",{ method:"POST" })
     window.location.href = "/login"
   }
 
-  // handle music toggle
   const handleMusicToggle = () => {
     const newState = audioEngine.toggleBgMusic();
     setIsMusicOn(newState);
   }
 
-  // handle play button click
   const handlePlayClick = async () => {
     try {
       const res = await fetch("/api/auth/me");
       if (res.ok) {
-        // user logged in → go to game map
-        router.push("/game-map");
+        handleNavigation("/game-map", "Loading Rush Map...");
       } else {
-        // not logged in → go to login
-        router.push("/login");
+        handleNavigation("/login", "Redirecting...");
       }
     } catch {
-      router.push("/login");
+      handleNavigation("/login", "Redirecting...");
     }
   }
 
-  // logo text
   const logoText = "🍌 RUSH RACE";
 
   return (
-
-   <nav className="w-full bg-transparent backdrop-blur-md border-b border-white/10">
+   <>
+    <nav className="w-full bg-transparent backdrop-blur-md border-b border-white/10 relative z-[50]">
 
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
 
-        {/* LOGO with moving/glow effect */}
-        <Link href="/">
+        {/* LOGO */}
+        <button onClick={() => handleNavigation("/", "Loading Rush Base...")}>
           <span className="text-2xl font-bold logo-moving inline-block text-white">
             {logoText}
           </span>
-        </Link>
+        </button>
 
         {/* NAV LINKS */}
         <div className="flex gap-8 text-white font-medium"> 
 
-          {/* Home Link with smooth underline and text change on hover */}
-          <Link href="/"><span className="nav-link">Home</span></Link>
+          <button
+            onClick={() => handleNavigation("/", "Loading Rush Base...")}
+            className="nav-link bg-transparent border-none cursor-pointer"
+          >
+            Home
+          </button>
 
-          {/* Play Link with smooth underline and login check */}
           <button
             onClick={handlePlayClick}
             className="nav-link bg-transparent border-none cursor-pointer"
@@ -114,16 +145,19 @@ export default function Navbar() {
             Play
           </button>
 
-          {/* Leaderboard Link with smooth underline */}
-          <Link href="/leaderboard"><span className="nav-link">Leaderboard</span></Link>
+          <button
+            onClick={() => handleNavigation("/leaderboard", "Loading Rush Rankings...")}
+            className="nav-link bg-transparent border-none cursor-pointer"
+          >
+            Leaderboard
+          </button>
 
         </div>
 
-        {/* MUSIC TOGGLE BUTTON */}
+        {/* MUSIC BUTTON */}
         <button
           onClick={handleMusicToggle}
           className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-lg hover:bg-white/20 transition-all duration-200 cursor-pointer group"
-          title={isMusicOn ? "Turn music off" : "Turn music on"}
         >
           <span className="text-xl">
             {isMusicOn ? "🎵" : "🔇"}
@@ -135,52 +169,21 @@ export default function Navbar() {
         </button>
 
         {/* USER PROFILE */}
-        <div className="relative">
-
-          {/* avatar + username button */}
+        <div ref={profileRef} className="relative">
           <div
             onClick={()=>setOpen(!open)}
-            className="flex items-center gap-3 bg-white/10 px-3 py-2 rounded-lg hover:bg-white/20 transition cursor-pointer"
+            className="flex items-center gap-3 bg-white/10 px-3 py-2 rounded-lg hover:bg-white/20 transition cursor-pointer backdrop-blur-md"
           >
-
-            {/* avatar image */}
             <img
               src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${username}`}
               className="w-8 h-8 rounded-full border-2 border-yellow-300 shadow-[0_0_10px_rgba(255,255,0,0.6)]"
             />
-
-            {/* username */}
             <span className="text-white font-medium">{username}</span>
-
           </div>
-
-          {/* DROPDOWN MENU */}
-          {open && (
-            <div className="absolute right-0 mt-2 w-40 bg-black/60 backdrop-blur-md rounded-lg shadow-lg border border-white/10">
-
-              {/* profile link */}
-              <Link
-                href="/profile"
-                className="block px-4 py-2 text-white hover:bg-white/10"
-              >
-                Profile
-              </Link>
-
-              {/* logout button */}
-              <button
-                onClick={handleLogout}
-                className="w-full text-left px-4 py-2 text-red-400 hover:bg-white/10"
-              >
-                Logout
-              </button>
-
-            </div>
-          )}
-
         </div>
+
       </div>
 
-      {/* LOGO animation & nav underline hover */}
       <style jsx>{`
         @keyframes logoMove {
           0%,100% { transform: translateX(0); text-shadow:0 0 2px #facc15; }
@@ -190,17 +193,13 @@ export default function Navbar() {
         }
 
         .logo-moving {
-          display: inline-block;
           animation: logoMove 2s ease-in-out infinite;
-          color: white;
         }
 
         .nav-link {
           position: relative;
-          display: inline-block;
           padding-bottom: 2px;
           transition: color 0.3s ease-in-out;
-          color: white;
         }
 
         .nav-link::after {
@@ -217,14 +216,67 @@ export default function Navbar() {
         .nav-link:hover::after {
           width: 100%;
         }
-
-        .nav-link:hover {
-          color: #fff;
-        }
       `}</style>
 
     </nav>
 
-  );
+    {/* PROFILE DROPDOWN - FIXED & CENTERED */}
+    {open && (
+      <div
+        ref={dropdownRef}
+        className="fixed w-40 bg-white/10 backdrop-blur-lg mt-3 rounded-lg shadow-[0_0_20px_rgba(255,255,255,0.2)] border border-white/10 z-[1100]"
+        style={{ top: dropdownPos.top, left: dropdownPos.left }}
+      >
+        <Link
+          href="/profile"
+          className="block px-4 py-2 text-white hover:bg-white/20 transition"
+        >
+          Profile
+        </Link>
+        <button
+          onClick={handleLogout}
+          className="w-full text-left px-4 py-2 text-red-400 hover:bg-white/20 transition"
+        >
+          Logout
+        </button>
+      </div>
+    )}
 
+    {/* LOADER */}
+    {showLoader && (
+      <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#01061C] overflow-hidden">
+
+        {/* Neon star background */}
+        <div className="absolute inset-0">
+          {[...Array(50)].map((_, i) => (
+            <span
+              key={`${i}-${tick}`}
+              className="absolute w-[2px] h-[2px] rounded-full bg-white/80 animate-pulse-neon"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 2}s`,
+                animationDuration: `${4 + Math.random() * 4}s`,
+                opacity: 0.7 + Math.random() * 0.3,
+                boxShadow: `0 0 ${1 + Math.random() * 2}px rgba(255,255,255,0.8)`
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Loader */}
+        <div className="flex flex-col items-center gap-6 z-10">
+          <div className="relative w-24 h-24 rounded-full border-4 border-purple-400/30 flex items-center justify-center animate-spin-slow">
+            <div className="absolute w-20 h-20 border-4 border-t-purple-400 border-purple-400/40 rounded-full animate-spin-neon"></div>
+            <div className="absolute w-16 h-16 border-2 border-t-purple-300 border-purple-300/50 rounded-full animate-pulse-neon"></div>
+          </div>
+
+          <p className="text-white text-xl opacity-80 tracking-wider glow-text text-center">
+            {loadingText}
+          </p>
+        </div>
+      </div>
+    )}
+   </>
+  );
 }
