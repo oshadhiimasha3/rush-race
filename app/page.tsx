@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Link from "next/link";
+import { Banana } from "lucide-react";
 
 type LeaderboardEntry = {
   _id: string;
@@ -181,6 +182,7 @@ export default function Home() {
         {/* Heading */}
         <h1 className="text-7xl font-extrabold mb-6 drop-shadow-[0_0_25px_rgba(255,255,0,1)] text-center">
           🍌 RUSH RACE
+          
         </h1>
         <p className="text-xl max-w-2xl mb-10 text-center">
           Solve puzzles fast, earn points, and dominate the leaderboard.
