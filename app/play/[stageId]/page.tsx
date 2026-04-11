@@ -1,11 +1,19 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import GameBoard from "../../../components/GameBoard";
 import { STAGES, Stage } from "../../../lib/stages";
 
 export default function PlayPage() {
   const params = useParams();
+  const [userId, setUserId] = useState<string>("guest");
+
+  // Read the real userId from localStorage (set by login page)
+  useEffect(() => {
+    const storedId = localStorage.getItem("userId") || "guest";
+    setUserId(storedId);
+  }, []);
 
   const rawStageId = params?.stageId;
 
@@ -25,5 +33,5 @@ export default function PlayPage() {
     );
   }
 
-  return <GameBoard userId="guest" stageConfig={stage} />;
+  return <GameBoard userId={userId} stageConfig={stage} />;
 }

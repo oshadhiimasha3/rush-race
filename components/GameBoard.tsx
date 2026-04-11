@@ -130,16 +130,22 @@ export default function GameBoard({
   }, [timeLeft, gameOver, paused, stageCompleted]);
 
   // === Save score to localStorage + backend
-  async function saveScore() {
-    localStorage.setItem("totalScore", score.toString());
+  async function saveScore(overrideScore?: number, overrideCorrectAnswers?: number, overrideCoins?: number, overrideStage?: number) {
+    const finalScore = overrideScore !== undefined ? overrideScore : score;
+    const finalCorrectAnswers = overrideCorrectAnswers !== undefined ? overrideCorrectAnswers : correctAnswers;
+    const finalCoins = overrideCoins !== undefined ? overrideCoins : coins;
+    const finalStage = overrideStage !== undefined ? overrideStage : stageConfig.id;
+    localStorage.setItem("totalScore", finalScore.toString());
     try {
       await fetch("/api/game/updateScore", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId,
-          score,
-          correctAnswers,
+          score: finalScore,
+          correctAnswers: finalCorrectAnswers,
+          coins: finalCoins,
+          currentStage: finalStage,
         }),
       });
     } catch {
@@ -174,7 +180,7 @@ export default function GameBoard({
           localStorage.setItem("completedStages", JSON.stringify(completed));
         }
 
-        saveScore();
+        saveScore(newScore, correctAnswers + 1, coins + 10, stageConfig.id + 1);
         setTimeout(() => router.push("/game-map"), 1800);
         return;
       }

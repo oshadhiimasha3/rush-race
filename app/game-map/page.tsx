@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { STAGES } from "../../lib/stages";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "../../components/Navbar";
 
 export default function GameMap() {
   const [completedStages, setCompletedStages] = useState<number[]>([]);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
-  const prevUserRef = useRef<string | null>(null);
   const [userId, setUserId] = useState<string>("guest");
 
   // Only access localStorage on client
@@ -22,15 +21,6 @@ export default function GameMap() {
       setCompletedStages(savedStages);
     }
   }, []);
-
-  // Reset completedStages if new user
-  useEffect(() => {
-    if (!userId) return;
-    if (prevUserRef.current !== userId) {
-      setCompletedStages([]); // new user starts fresh
-      prevUserRef.current = userId;
-    }
-  }, [userId]);
 
   const currentStageId = STAGES.find(
     (stage) =>

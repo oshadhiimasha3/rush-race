@@ -92,6 +92,9 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout",{ method:"POST" })
+    localStorage.removeItem("userId")
+    localStorage.removeItem("completedStages")
+    localStorage.removeItem("totalScore")
     window.location.href = "/login"
   }
 
