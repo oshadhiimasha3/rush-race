@@ -1,273 +1,489 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { getPuzzle } from "../lib/bananaAPI";
 import TimerBar from "./TimerBar";
+import { useSound } from "../context/SoundContext";
+import { Stage } from "../lib/stages";
+import PauseModal from "./PauseModal";
+import GameOverModal from "./GameOverModal";
+import StageCompletedModal from "./StageCompletedModal";
 
-export default function GameBoard({ userId }: { userId: string }) {
-
-  const START_TIME = 30;
-  const MIN_TIME = 5;
-  const TIME_DECREMENT = 5;
+export default function GameBoard({
+  userId,
+  stageConfig,
+}: {
+  userId: string;
+  stageConfig: Stage;
+}) {
   const BASE_SCORE = 10;
+  const sounds = useSound();
+  const router = useRouter();
+  const lastWarnSecRef = useRef<number>(-1);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  //State Variables
+  // === Stage background images (public folder)
+  const stageBackgrounds = [
+    "/stage12.jpeg",
+    "/stage14.jpeg",
+    "/stage18.jpeg",
+    "/stage15.jpeg",
+    "/stage13.png",
+    "/stage17.jpeg",
+    "/stage16.jpeg",
+    "/stage1.jpeg",
+    "/stage19.jpeg",
+  ];
+  const backgroundImage = stageBackgrounds[stageConfig.id - 1] || "";
+
+  const arenaNames = [
+  "Misty Lakehouse",
+  "Sunset Canyon",
+  "Garden of Time",
+  "Lakeside Drift",
+  "Gloomy Peaks",
+  "Speedway Bridge",
+  "Obsidian Circuit",
+  "Bluewater Bay",
+  "Icy Heights",
+];
+
+  // === Game states
   const [puzzle, setPuzzle] = useState<any>(null);
   const [answer, setAnswer] = useState("");
   const [score, setScore] = useState(0);
   const [coins, setCoins] = useState(0);
   const [feedback, setFeedback] = useState("");
-  const [timeLeft, setTimeLeft] = useState(START_TIME);
+  const [timeLeft, setTimeLeft] = useState(stageConfig.time);
   const [combo, setCombo] = useState(0);
   const [gameOver, setGameOver] = useState(false);
-  const [currentTimeLimit, setCurrentTimeLimit] = useState(START_TIME);
+  const [stageCompleted, setStageCompleted] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [correctAnswers, setCorrectAnswers] = useState(0);
-  const [stage, setStage] = useState(1); // 1, 2, 3
+  const [puzzlesSolved, setPuzzlesSolved] = useState(0);
+  const [loadingUser, setLoadingUser] = useState(true);
 
-  const timerRef = useRef<any>(null); //stores reference to the timer to clear it when needed.
+  // === Load total score from backend or localStorage
+  useEffect(() => {
+    async function fetchUserStats() {
+      try {
+        const savedScore = Number(localStorage.getItem("totalScore")) || 0;
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
+        if (res.ok) {
+          const backendScore = data.stats.totalScore || 0;
+          const initialScore = Math.max(savedScore, backendScore);
+          setScore(initialScore);
+          setCoins(data.stats.coins || 0);
+          setCorrectAnswers(data.stats.correctAnswers || 0);
+          localStorage.setItem("totalScore", initialScore.toString());
+        }
+      } catch (err) {
+        console.log("Failed to load user stats", err);
+      } finally {
+        setLoadingUser(false);
+      }
+    }
+    fetchUserStats();
+  }, [userId]);
 
-  async function loadPuzzle(isFirst = false){
-    const data = await getPuzzle(stage); //fetches puzzle from API
+  // === Load puzzle
+  async function loadPuzzle() {
+    const data = await getPuzzle(stageConfig.id);
     setPuzzle(data);
     setFeedback("");
-
-    //Determines time limit for puzzle
-    const newTimeLimit = isFirst
-      ? START_TIME
-      : Math.max(MIN_TIME, currentTimeLimit - TIME_DECREMENT);
-
-    setCurrentTimeLimit(newTimeLimit);
-    setTimeLeft(newTimeLimit); //Updates currentTimeLimit and timeLeft
+    setTimeLeft(stageConfig.time);
+    lastWarnSecRef.current = -1;
   }
 
-  useEffect(()=>{ loadPuzzle(true); },[stage]); //Loads a puzzle whenever the stage changes
+  useEffect(() => {
+    loadPuzzle();
+  }, [stageConfig.id]);
 
-  useEffect(()=>{
-    if(gameOver) return;
-
-    if(timeLeft <= 0){
+  // === Timer
+  useEffect(() => {
+    if (gameOver || paused || stageCompleted) return;
+    if (timeLeft <= 0) {
+      sounds.playGameOver();
       setGameOver(true);
       setFeedback("⏰ Time's Up! Game Over");
       setCombo(0);
-      updateScore(score);
+      saveScore();
       return;
     }
+    timerRef.current = setTimeout(() => setTimeLeft((prev) => prev - 0.1), 100);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [timeLeft, gameOver, paused, stageCompleted]);
 
-    timerRef.current = setTimeout(()=>setTimeLeft(timeLeft - 0.1),100); //Decreases timeLeft by 0.1 seconds every 100ms.
-    return ()=>clearTimeout(timerRef.current);
-  },[timeLeft,gameOver]);
-
-  async function updateScore(finalScore:number){
-    try{
-      await fetch("/api/game/updateScore",{
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body:JSON.stringify({ userId, score:finalScore, correctAnswers, stage })
-      })
-    }catch{ console.log("Score update failed") }
-  }
-
-  function submit(){
-    if(!puzzle || gameOver) return; //If no puzzle is loaded or game is over do nothing.
-
-    if(parseInt(answer) === puzzle.solution){
-      const newCombo = combo + 1
-      const newScore = score + BASE_SCORE * (1 + combo * 0.5) //Score is BASE_SCORE multiplied by combo bonus.
-
-      setCombo(newCombo)
-      setScore(newScore)
-      setCoins(coins + 10)
-      setCorrectAnswers(prev => prev + 1)
-      setFeedback(`✅ Correct! +10 Coins! Combo x${newCombo}`)
-
-      // ================= Auto Stage Progression =================
-      if(newScore >= 100 && stage !== 3) setStage(3);
-      else if(newScore >= 50 && stage === 1) setStage(2);
-      // ==========================================================
-
-      setTimeout(()=>loadPuzzle(),1200)
-    } else {
-      setFeedback("❌ Wrong! Game Over")
-      setCombo(0)
-      setGameOver(true)
-      updateScore(score)
+  // === Time warning
+  useEffect(() => {
+    if (gameOver || paused || timeLeft <= 0 || stageCompleted) return;
+    const sec = Math.floor(timeLeft);
+    if (sec <= 10 && sec !== lastWarnSecRef.current) {
+      lastWarnSecRef.current = sec;
+      sounds.playTimeWarning();
     }
+    if (sec > 10) lastWarnSecRef.current = -1;
+  }, [timeLeft, gameOver, paused, stageCompleted]);
 
-    setAnswer("")
+  // === Save score to localStorage + backend
+  async function saveScore(overrideScore?: number, overrideCorrectAnswers?: number, overrideCoins?: number, overrideStage?: number) {
+    const finalScore = overrideScore !== undefined ? overrideScore : score;
+    const finalCorrectAnswers = overrideCorrectAnswers !== undefined ? overrideCorrectAnswers : correctAnswers;
+    const finalCoins = overrideCoins !== undefined ? overrideCoins : coins;
+    const finalStage = overrideStage !== undefined ? overrideStage : stageConfig.id;
+    localStorage.setItem("totalScore", finalScore.toString());
+    try {
+      await fetch("/api/game/updateScore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          score: finalScore,
+          correctAnswers: finalCorrectAnswers,
+          coins: finalCoins,
+          currentStage: finalStage,
+        }),
+      });
+    } catch {
+      console.log("Score update failed");
+    }
   }
 
-  function restartGame(useCoins:boolean=false){
-    if(useCoins){
-      if(coins < 30){
-        setFeedback("❌ Not enough coins to continue!");
+  // === Submit answer
+  function submit() {
+    if (!puzzle || gameOver || paused || stageCompleted) return;
+
+    if (parseInt(answer) === puzzle.solution) {
+      sounds.playCorrect();
+      const newSolved = puzzlesSolved + 1;
+      const newScore = score + BASE_SCORE * (1 + combo * 0.5);
+
+      setPuzzlesSolved(newSolved);
+      setScore(newScore);
+      setCombo(combo + 1);
+      setCoins(coins + 10);
+      setCorrectAnswers((prev) => prev + 1);
+
+      if (newSolved >= stageConfig.puzzles) {
+        sounds.playStageUp();
+        setStageCompleted(true);
+        setGameOver(false);
+        setFeedback(" Stage Completed!");
+
+        const completed = JSON.parse(localStorage.getItem("completedStages") || "[]");
+        if (!completed.includes(stageConfig.id)) {
+          completed.push(stageConfig.id);
+          localStorage.setItem("completedStages", JSON.stringify(completed));
+        }
+
+        saveScore(newScore, correctAnswers + 1, coins + 10, stageConfig.id + 1);
+        setTimeout(() => router.push("/game-map"), 1800);
         return;
       }
-      setCoins(coins - 30);
-      setGameOver(false);
-      setFeedback("💪 Continued! Good luck!");
-      setTimeLeft(START_TIME);
-      return;
+
+      setFeedback(`Correct! (${newSolved}/${stageConfig.puzzles})`);
+      setTimeout(() => loadPuzzle(), 1000);
+    } else {
+      sounds.playWrong();
+      setFeedback("Wrong! Game Over");
+      setGameOver(true);
+      setCombo(0);
+      saveScore();
     }
 
-    setScore(0)
-    setCoins(0)
-    setCombo(0)
-    setCorrectAnswers(0)
-    setCurrentTimeLimit(START_TIME)
-    setTimeLeft(START_TIME)
-    setStage(1); 
-    setGameOver(false)
-    loadPuzzle(true)
+    setAnswer("");
   }
 
-  function skipPuzzle(){
-    if(coins < 20){
-      setFeedback("❌ Not enough coins to skip!");
+  // === Restart / Retry Stage
+  function restartGame() {
+    setCombo(0);
+    setPuzzlesSolved(0);
+    setStageCompleted(false);
+    setGameOver(false);
+    setPaused(false);
+    setFeedback("");
+    setTimeLeft(stageConfig.time);
+    loadPuzzle();
+  }
+
+  function skipPuzzle() {
+    if (coins < 20 || paused || stageCompleted) {
+      sounds.playWrong();
+      setFeedback(" Not enough coins!");
       return;
     }
+    sounds.playSkip();
     setCoins(coins - 20);
     loadPuzzle();
-    setFeedback("⏩ Puzzle Skipped!");
   }
 
-  // ========== Calculate banana progress position ==========
-  const maxScore = 150; // maximum score considered
-  const progressPercent = Math.min((score / maxScore) * 100, 100);
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  };
 
-  // ========== Stage dot positions based on score thresholds ==========
-  const stageThresholds = [0, 50, 100]; // scores where stages start
-  const stagePositions = stageThresholds.map(threshold => Math.min((threshold / maxScore) * 100, 100));
+  
+ // === Loader with minimum 2-second display
+const [showLoader, setShowLoader] = useState(true);
 
-  return(
-    <div className="flex flex-col items-center justify-start pt-4 px-4 pb-8 w-full">
+useEffect(() => {
+  // Always show loader for at least 2 seconds
+  const minDisplayTimer = setTimeout(() => {
+    setShowLoader(loadingUser); // after 2s, reflect actual loadingUser state
+  }, 2000);
 
-      {/* =================== Banana Progress Bar =================== */}
-      <div className="mb-6 w-full max-w-2xl">
-        <div className="relative h-6 w-full flex items-center">
-          {/* Background line with gradient */}
-          <div className="absolute top-3 h-2 w-full rounded-full bg-gradient-to-r from-yellow-200 via-yellow-300 to-pink-200" />
+  return () => clearTimeout(minDisplayTimer);
+}, []); // run once on mount
 
-          {/* Stage dots integrated into the bar */}
-          {stagePositions.map((pos, idx) => (
-            <span
-              key={idx}
-              className="absolute w-3 h-3 rounded-full bg-[orange]"
-              style={{ left: `${pos}%`, transform: `translateX(-50%)` }}
-            />
-          ))}
+useEffect(() => {
+  // If 2s passed and loadingUser is false, hide loader
+  if (!loadingUser) {
+    const hideTimer = setTimeout(() => setShowLoader(false), 2000);
+    return () => clearTimeout(hideTimer);
+  }
+}, [loadingUser]);
 
-          {/* Banana emoji */}
+if (showLoader)
+  return (
+    <div className="relative min-h-screen flex items-center justify-center bg-[#01061C] overflow-hidden">
+      {/* Neon star background */}
+      <div className="absolute inset-0">
+        {[...Array(50)].map((_, i) => (
           <span
-            className="absolute -top-2 text-2xl transition-left duration-500"
-            style={{ left: `${progressPercent}%`, transform: `translateX(-50%)` }}
-          >
-            🍌
-          </span>
-        </div>
-
-        {/* Stage labels aligned under their dots */}
-        <div className="relative w-full h-6 mt-2 mb-4.5">
-          {stagePositions.map((pos, idx) => (
-            <span
-              key={idx}
-              className="absolute text-gray-700 text-sm font-semibold"
-              style={{ left: `${pos}%`, transform: `translateX(-50%)` }}
-            >
-              Stage {idx + 1}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* =================== Score & Coins HUD =================== */}
-      <div className="mb-4 flex items-center gap-6 justify-center w-full max-w-md">
-        <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white px-6 py-3 rounded-2xl shadow-lg text-center animate-pulse w-36">
-          <h2 className="text-lg font-bold">Score: {score.toFixed(0)}</h2>
-        </div>
-
-        <div className="flex items-center gap-2 bg-yellow-200/80 px-4 py-2 rounded-2xl shadow-lg justify-center w-36">
-          <span className="text-yellow-400 text-3xl animate-bounce-glow"
-            style={{ textShadow:"0 0 5px #fff, 0 0 10px #ffeb3b, 0 0 20px #ffeb3b, 0 0 30px #ffeb3b" }}>🪙</span>
-          <span className="text-gray-900 font-bold text-xl animate-bounce-glow">x{coins}</span>
-        </div>
-      </div>
-
-      {/* =================== Puzzle Box =================== */}
-      <div className="bg-yellow-50/80 backdrop-blur-md p-6 rounded-3xl shadow-2xl flex flex-col items-center w-full max-w-lg mb-6">
-        {puzzle && (
-          <img
-            src={puzzle.question}
-            alt="Puzzle"
-            className="w-full h-auto rounded-xl shadow-lg mb-4"
-            style={{ maxHeight: "500px", objectFit: "contain" }}
+            key={i}
+            className="absolute w-[2px] h-[2px] rounded-full bg-white/80 animate-pulse-neon"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`, // small random delay
+              animationDuration: `${10 + Math.random() * 6}s`, // slower stars, 6–12s
+              opacity: 0.7 + Math.random() * 0.3,
+              boxShadow: `0 0 ${1 + Math.random() * 2}px rgba(255,255,255,0.8)`,
+            }}
           />
-        )}
-
-        {!gameOver && (
-          <>
-            <div className="w-full mb-4">
-              <div className="flex justify-between mb-1 text-gray-800 font-bold">
-                <span>Time Left:</span>
-                <span>{timeLeft.toFixed(1)}s</span>
-              </div>
-              <TimerBar time={timeLeft} maxTime={currentTimeLimit}/>
-            </div>
-
-            {/* Skip Puzzle */}
-            <button
-              onClick={skipPuzzle}
-              className="w-full py-3 bg-orange-400 text-black font-bold rounded-xl hover:bg-orange-500 active:scale-95 transition-transform duration-150 shadow-lg"
-            >
-              Skip Puzzle (-20 Coins)
-            </button>
-          </>
-        )}
+        ))}
       </div>
 
-      {/* =================== Answer & Actions Box =================== */}
-      <div className="bg-yellow-100/90 backdrop-blur-md p-6 rounded-3xl shadow-2xl flex flex-col items-center w-full max-w-lg space-y-4">
-        <input
-          value={answer}
-          onChange={(e)=>setAnswer(e.target.value)}
-          placeholder="Enter your answer"
-          className="w-full px-4 py-3 rounded-xl border-2 border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-300 text-gray-900 font-semibold bg-yellow-50 placeholder:text-gray-500 transition duration-200"
-          disabled={gameOver}
-        />
+      {/* Neon Loader */}
+      <div className="flex flex-col items-center gap-6 z-10">
+        <div className="relative w-24 h-24 rounded-full border-4 border-purple-400/30 flex items-center justify-center animate-spin-slow">
+          <div className="absolute w-20 h-20 border-4 border-t-purple-400 border-purple-400/40 rounded-full animate-spin-neon"></div>
+          <div className="absolute w-16 h-16 border-2 border-t-purple-300 border-purple-300/50 rounded-full animate-pulse-neon"></div>
+        </div>
 
-        {!gameOver ? (
-          <button
-            onClick={submit}
-            className="w-full py-3 bg-yellow-400 text-black font-bold rounded-xl hover:bg-yellow-500 active:scale-95 transition-transform duration-150 shadow-lg"
-          >
-            Submit
-          </button>
-        ) : (
-          <div className="flex flex-col gap-3 w-full">
-            <button
-              onClick={()=>restartGame()}
-              className="w-full py-3 bg-red-500 text-white font-bold hover:bg-red-600 rounded-xl active:scale-95 transition-transform duration-150 shadow-lg"
-            >
-              Restart Game
-            </button>
-            <button
-              onClick={()=>restartGame(true)}
-              className="w-full py-3 bg-yellow-400 text-black font-bold hover:bg-yellow-500 rounded-xl active:scale-95 transition-transform duration-150 shadow-lg"
-            >
-              Continue Game (-30 Coins)
-            </button>
-          </div>
-        )}
-
-        {feedback && (
-          <p
-            className={`mt-2 font-semibold ${
-              feedback.includes("✅") ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {feedback}
-          </p>
-        )}
+        {/* Loading Text */}
+        <p className="text-white text-xl opacity-80 tracking-wider glow-text text-center">
+          Initializing Race ...
+        </p>
       </div>
     </div>
-  )
+  );
+
+  // === Clock color
+  let timeColor = "text-white";
+  if (timeLeft <= 6) timeColor = "animate-flashText font-bold";
+  else if (timeLeft <= 11) timeColor = "text-yellow-400 font-bold";
+
+  return (
+    <div
+      className="min-h-screen bg-cover bg-center text-white overflow-x-hidden relative"
+      style={{ backgroundImage: `url(${backgroundImage})` }}
+    >
+      {/* Dark overlay for contrast */}
+      <div className="absolute inset-0 bg-black/50 pointer-events-none"></div>
+
+      {/* NAVBAR */}
+<div className="relative z-10 w-full flex justify-between items-center px-5 py-3 bg-white/10 backdrop-blur-l border-b border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+
+{/* LEFT BUTTON */}
+<button
+  onClick={() => router.push("/game-map")}
+  className="flex items-center h-10 rounded-lg bg-white/10 border border-white/20 backdrop-blur-md hover:bg-white/20 transition-all duration-300 px-1 gap-0"
+>
+  <img src="/mapicon.png" alt="Map Icon" className="w-25 h-25 object-contain" />
+  <span className="text-white font-medium"></span>
+</button>
+
+  {/* CENTER TITLE */}
+  <div className="flex items-center justify-center gap-5">
+
+    {/* LEFT Twinkling Bullet */}
+    <span className="w-2.5 h-2.5 rounded-full bg-white animate-bulletGlow"></span>
+
+    {/* Constant Glow Title */}
+    <h1 className="text-xl font-bold glow-text">
+      Race Through The {arenaNames[stageConfig.id - 1] || `Race ${stageConfig.id}`}
+    </h1>
+
+    {/* RIGHT Twinkling Bullet */}
+    <span className="w-2.5 h-2.5 rounded-full bg-white animate-bulletGlow"></span>
+
+  </div>
+
+  {/* RIGHT BUTTON */}
+  <button
+    onClick={() => setPaused(!paused)}
+    className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 backdrop-blur-md hover:bg-white/20 transition-all duration-300"
+  >
+    {paused ? "▶ Resume" : "⏸ Pause"}
+  </button>
+</div>
+
+{/* NAVBAR ANIMATIONS */}
+<style jsx>{`
+  /* Constant bright glow (no animation) */
+  .glow-text {
+    text-shadow:
+      0 0 4px rgba(255,255,255,0.5),
+      0 0 8px rgba(255,255,255,0.4),
+      0 0 14px rgba(255,255,255,0.3);
+  }
+
+  @keyframes bulletGlow {
+    0%, 100% {
+      box-shadow:
+        0 0 6px rgba(255,255,255,0.6),
+        0 0 12px rgba(121, 117, 117, 0.4);
+      opacity: 0.3;
+    }
+    50% {
+      box-shadow:
+        0 0 12px rgba(255,255,255,1),
+        0 0 25px rgba(255,255,255,0.9),
+        0 0 40px rgba(255,255,255,0.7);
+      opacity: 1;
+    }
+  }
+
+  .animate-bulletGlow {
+    animation: bulletGlow 1.5s ease-in-out infinite;
+    animation-delay: 0s; 
+    animation-fill-mode: both;
+  }
+`}</style>
+
+      {/* TOP STATS */}
+      <style>{`
+        @keyframes glowPulse { 0%,100% { box-shadow: 0 0 0 rgba(255,255,255,0.2);} 50% {box-shadow:0 0 25px rgba(255,255,255,0.6);} }
+        .animate-glow1, .animate-glow2, .animate-glow3 { animation: glowPulse 2s infinite; }
+        @keyframes flashText { 0% { color: #ff0000; text-shadow: 0 0 10px #ff0000;} 50% { color: #ff5555; text-shadow:0 0 20px #ff5555;} 100% { color: #ff0000; text-shadow: 0 0 10px #ff0000;} }
+        .animate-flashText { animation: flashText 0.5s infinite; }
+        .card-glow { box-shadow: 0 0 25px rgba(255,255,255,0.5); transition: box-shadow 0.3s; }
+      `}</style>
+
+      <div className="relative z-10 w-full max-w-5xl mx-auto grid grid-cols-3 gap-8 mt-10 px-6">
+        <div className="bg-white/10 p-4 rounded-xl text-center animate-glow1 card-glow">
+          <p>Progress</p>
+          <p className="font-bold">{puzzlesSolved}/{stageConfig.puzzles}</p>
+        </div>
+        <div className="bg-white/10 p-4 rounded-xl text-center animate-glow2 card-glow">
+          <p>Score</p>
+          <p className="font-bold">{score}</p>
+        </div>
+        <div className="bg-white/10 p-4 rounded-xl text-center animate-glow3 card-glow">
+          <p>🪙 Coins</p>
+          <p className="font-bold">{coins}</p>
+        </div>
+      </div>
+
+      {/* MAIN UI */}
+      <div className="relative z-10 max-w-6xl mx-auto grid md:grid-cols-2 gap-15 px-6 py-8 mt-5">
+        {/* LEFT: Puzzle */}
+        <div className="bg-white/10 rounded-2xl p-6 flex items-start justify-start card-glow">
+          {puzzle && (
+            <img
+              src={puzzle.question}
+              alt="Puzzle"
+              className="w-full max-w-[500px] h-[400px] object-contain rounded-xl"
+            />
+          )}
+        </div>
+
+        {/* RIGHT: Input / Actions */}
+        <div className="bg-white/10 rounded-2xl p-6 flex flex-col card-glow">
+
+          {!gameOver && !stageCompleted && (
+            <div className="mb-6 text-center">
+              <div className={`text-4xl font-mono bg-black/40 py-3 rounded-xl ${timeColor}`}>
+                ⏱ {formatTime(timeLeft)}
+              </div>
+              <div className="mt-2">
+                <TimerBar time={timeLeft} maxTime={stageConfig.time} />
+              </div>
+            </div>
+          )}
+
+          <input
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            disabled={gameOver || paused || stageCompleted}
+            placeholder="Enter answer..."
+            className="p-4 rounded-xl bg-white/10 border border-white/30 mb-7"
+          />
+
+          <button
+            onClick={submit}
+            disabled={gameOver || paused || stageCompleted}
+            className="relative flex items-center justify-center border border-white/20 bg-white/10 text-white font-bold py-3 mb-5 rounded-xl text-lg shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-105 hover:shadow-[0_0_50px_rgba(255,255,255,0.4)] transition-all duration-300"
+          >
+            Submit
+            <span className="absolute inset-0 rounded-xl opacity-20 bg-white/20 animate-ping"></span>
+          </button>
+
+          {!gameOver && !stageCompleted && (
+            <button
+              onClick={skipPuzzle}
+              disabled={paused}
+              className="relative mt-3 flex items-center justify-center border border-white/20 bg-white/10 text-white font-bold py-3 rounded-xl text-lg shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-105 hover:shadow-[0_0_50px_rgba(255,255,255,0.4)] transition-all duration-300"
+            >
+              Skip (-20 coins)
+              <span className="absolute inset-0 rounded-xl opacity-20 bg-white/20 "></span>
+            </button>
+          )}
+
+          {feedback && <p className="mt-4 text-center font-semibold">{feedback}</p>}
+
+          {(gameOver || stageCompleted) && (
+            <button
+              onClick={restartGame}
+              className="mt-4 py-3 bg-green-600 rounded-xl text-lg font-bold hover:bg-green-500"
+            >
+              🔁 Retry Stage
+            </button>
+          )}
+        </div>
+      </div>
+
+{/* ---------------- MODALS ---------------- */}
+
+{/* PAUSE MODAL */}
+{paused && !gameOver && !stageCompleted && (
+  <PauseModal setPaused={setPaused} />
+)}
+
+{/* GAME OVER MODAL */}
+{gameOver && !stageCompleted && (
+  <GameOverModal
+    score={score}
+    puzzlesSolved={puzzlesSolved}
+    restartGame={restartGame}
+  />
+)}
+
+{/* STAGE COMPLETED MODAL */}
+{stageCompleted && !gameOver && (
+  <StageCompletedModal
+    score={score}
+    puzzlesSolved={puzzlesSolved}
+    stageId={stageConfig.id} 
+  />
+)}
+
+    </div>
+  );
 }

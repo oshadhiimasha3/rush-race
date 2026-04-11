@@ -11,7 +11,9 @@ stats:{
 totalScore:{type:Number,default:0},
 gamesPlayed:{type:Number,default:0},
 highestScore:{type:Number,default:0},
-correctAnswers:{type:Number,default:0}
+correctAnswers:{type:Number,default:0},
+coins:{type:Number,default:0},
+currentStage:{type:Number,default:1}
 }
 
 },{timestamps:true})

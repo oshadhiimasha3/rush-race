@@ -8,7 +8,7 @@ export async function POST(req: Request){
 
     await connectDB()
 
-    const { userId, score, correctAnswers = 0 } = await req.json() // frontend sends the userId, score, and correctAnswers
+    const { userId, score, correctAnswers = 0, coins = 0, currentStage = 1 } = await req.json() // frontend sends the userId, score, correctAnswers, coins, and currentStage
 
     if(!userId){
       return NextResponse.json(
@@ -26,9 +26,13 @@ export async function POST(req: Request){
       )
     }
 
-    user.stats.totalScore += score
+    // GameBoard tracks the cumulative running total in its score state,
+    // so we REPLACE (not add) to avoid double-counting on every save.
+    user.stats.totalScore = score
     user.stats.gamesPlayed += 1
-    user.stats.correctAnswers += correctAnswers
+    user.stats.correctAnswers = correctAnswers
+    user.stats.coins = coins
+    user.stats.currentStage = currentStage
 
     if(score > user.stats.highestScore){
       user.stats.highestScore = score
