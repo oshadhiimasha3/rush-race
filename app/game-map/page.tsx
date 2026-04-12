@@ -11,40 +11,16 @@ export default function GameMap() {
   const [isHovering, setIsHovering] = useState(false);
   const [userId, setUserId] = useState<string>("guest");
 
+  // Only access localStorage on client
   useEffect(() => {
-  async function loadUserProgress() {
-    try {
+    if (typeof window !== "undefined") {
       const storedUserId = localStorage.getItem("userId") || "guest";
       setUserId(storedUserId);
 
-      const res = await fetch("/api/auth/me");
-      const data = await res.json();
-
-      if (res.ok) {
-        const currentStage = data.stats.currentStage || 1;
-
-        // Generate completed stages from currentStage
-        const completed = [];
-        for (let i = 1; i < currentStage; i++) {
-          completed.push(i);
-        }
-
-        setCompletedStages(completed);
-
-        // Sync to localStorage (optional)
-        localStorage.setItem("completedStages", JSON.stringify(completed));
-      } else {
-        // fallback to localStorage if API fails
-        const savedStages = JSON.parse(localStorage.getItem("completedStages") || "[]");
-        setCompletedStages(savedStages);
-      }
-    } catch (err) {
-      console.log("Failed to load progress", err);
+      const savedStages = JSON.parse(localStorage.getItem("completedStages") || "[]");
+      setCompletedStages(savedStages);
     }
-  }
-
-  loadUserProgress();
-}, []);
+  }, []);
 
   const currentStageId = STAGES.find(
     (stage) =>

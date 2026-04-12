@@ -38,16 +38,16 @@ export default function GameBoard({
   const backgroundImage = stageBackgrounds[stageConfig.id - 1] || "";
 
   const arenaNames = [
-    "Misty Lakehouse",
-    "Sunset Canyon",
-    "Garden of Time",
-    "Lakeside Drift",
-    "Gloomy Peaks",
-    "Speedway Bridge",
-    "Obsidian Circuit",
-    "Bluewater Bay",
-    "Icy Heights",
-  ];
+  "Misty Lakehouse",
+  "Sunset Canyon",
+  "Garden of Time",
+  "Lakeside Drift",
+  "Gloomy Peaks",
+  "Speedway Bridge",
+  "Obsidian Circuit",
+  "Bluewater Bay",
+  "Icy Heights",
+];
 
   // === Game states
   const [puzzle, setPuzzle] = useState<any>(null);
@@ -64,13 +64,6 @@ export default function GameBoard({
   const [puzzlesSolved, setPuzzlesSolved] = useState(0);
   const [loadingUser, setLoadingUser] = useState(true);
 
-  // ✅ NEW: snapshot of stats before stage
-  const [initialStats, setInitialStats] = useState({
-    score: 0,
-    coins: 0,
-    correctAnswers: 0,
-  });
-
   // === Load total score from backend or localStorage
   useEffect(() => {
     async function fetchUserStats() {
@@ -81,18 +74,9 @@ export default function GameBoard({
         if (res.ok) {
           const backendScore = data.stats.totalScore || 0;
           const initialScore = Math.max(savedScore, backendScore);
-
           setScore(initialScore);
           setCoins(data.stats.coins || 0);
           setCorrectAnswers(data.stats.correctAnswers || 0);
-
-          // ✅ store snapshot
-          setInitialStats({
-            score: initialScore,
-            coins: data.stats.coins || 0,
-            correctAnswers: data.stats.correctAnswers || 0,
-          });
-
           localStorage.setItem("totalScore", initialScore.toString());
         }
       } catch (err) {
@@ -102,7 +86,7 @@ export default function GameBoard({
       }
     }
     fetchUserStats();
-  }, [userId, stageConfig.id]);
+  }, [userId]);
 
   // === Load puzzle
   async function loadPuzzle() {
@@ -120,26 +104,14 @@ export default function GameBoard({
   // === Timer
   useEffect(() => {
     if (gameOver || paused || stageCompleted) return;
-
     if (timeLeft <= 0) {
       sounds.playGameOver();
       setGameOver(true);
       setFeedback("⏰ Time's Up! Game Over");
       setCombo(0);
-
-      // ❌ revert
-      setScore(initialStats.score);
-      setCoins(initialStats.coins);
-      setCorrectAnswers(initialStats.correctAnswers);
-
-      saveScore(
-        initialStats.score,
-        initialStats.correctAnswers,
-        initialStats.coins
-      );
+      saveScore();
       return;
     }
-
     timerRef.current = setTimeout(() => setTimeLeft((prev) => prev - 0.1), 100);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -157,26 +129,13 @@ export default function GameBoard({
     if (sec > 10) lastWarnSecRef.current = -1;
   }, [timeLeft, gameOver, paused, stageCompleted]);
 
-  // === Save score
-  async function saveScore(
-    overrideScore?: number,
-    overrideCorrectAnswers?: number,
-    overrideCoins?: number,
-    overrideStage?: number
-  ) {
-    const finalScore =
-      overrideScore !== undefined ? overrideScore : score;
-    const finalCorrectAnswers =
-      overrideCorrectAnswers !== undefined
-        ? overrideCorrectAnswers
-        : correctAnswers;
-    const finalCoins =
-      overrideCoins !== undefined ? overrideCoins : coins;
-    const finalStage =
-      overrideStage !== undefined ? overrideStage : stageConfig.id;
-
+  // === Save score to localStorage + backend
+  async function saveScore(overrideScore?: number, overrideCorrectAnswers?: number, overrideCoins?: number, overrideStage?: number) {
+    const finalScore = overrideScore !== undefined ? overrideScore : score;
+    const finalCorrectAnswers = overrideCorrectAnswers !== undefined ? overrideCorrectAnswers : correctAnswers;
+    const finalCoins = overrideCoins !== undefined ? overrideCoins : coins;
+    const finalStage = overrideStage !== undefined ? overrideStage : stageConfig.id;
     localStorage.setItem("totalScore", finalScore.toString());
-
     try {
       await fetch("/api/game/updateScore", {
         method: "POST",
@@ -233,23 +192,13 @@ export default function GameBoard({
       setFeedback("Wrong! Game Over");
       setGameOver(true);
       setCombo(0);
-
-      // ❌ revert
-      setScore(initialStats.score);
-      setCoins(initialStats.coins);
-      setCorrectAnswers(initialStats.correctAnswers);
-
-      saveScore(
-        initialStats.score,
-        initialStats.correctAnswers,
-        initialStats.coins
-      );
+      saveScore();
     }
 
     setAnswer("");
   }
 
-  // === Restart
+  // === Restart / Retry Stage
   function restartGame() {
     setCombo(0);
     setPuzzlesSolved(0);
@@ -258,12 +207,6 @@ export default function GameBoard({
     setPaused(false);
     setFeedback("");
     setTimeLeft(stageConfig.time);
-
-    // reset to snapshot
-    setScore(initialStats.score);
-    setCoins(initialStats.coins);
-    setCorrectAnswers(initialStats.correctAnswers);
-
     loadPuzzle();
   }
 
@@ -284,22 +227,26 @@ export default function GameBoard({
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
-  // === Loader
-  const [showLoader, setShowLoader] = useState(true);
+  
+ // === Loader with minimum 2-second display
+const [showLoader, setShowLoader] = useState(true);
 
-  useEffect(() => {
-    const minDisplayTimer = setTimeout(() => {
-      setShowLoader(loadingUser);
-    }, 2000);
-    return () => clearTimeout(minDisplayTimer);
-  }, []);
+useEffect(() => {
+  // Always show loader for at least 2 seconds
+  const minDisplayTimer = setTimeout(() => {
+    setShowLoader(loadingUser); // after 2s, reflect actual loadingUser state
+  }, 2000);
 
-  useEffect(() => {
-    if (!loadingUser) {
-      const hideTimer = setTimeout(() => setShowLoader(false), 2000);
-      return () => clearTimeout(hideTimer);
-    }
-  }, [loadingUser]);
+  return () => clearTimeout(minDisplayTimer);
+}, []); // run once on mount
+
+useEffect(() => {
+  // If 2s passed and loadingUser is false, hide loader
+  if (!loadingUser) {
+    const hideTimer = setTimeout(() => setShowLoader(false), 2000);
+    return () => clearTimeout(hideTimer);
+  }
+}, [loadingUser]);
 
 if (showLoader)
   return (
