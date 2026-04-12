@@ -36,8 +36,12 @@ export default function LoginPage() {
       // Save userId to localStorage so client pages can access it (cookie is httpOnly)
       localStorage.setItem("userId", data.user.id);
       // Clear previous user's stage progress so new user starts fresh
-      localStorage.removeItem("completedStages");
-      localStorage.removeItem("totalScore");
+      // Save userId
+localStorage.setItem("userId", data.user.id);
+
+// DO NOT clear progress — keep it or reload from backend
+alert("Login successful");
+router.replace("/game-map");
       alert("Login successful")
       router.replace("/game-map")
 
