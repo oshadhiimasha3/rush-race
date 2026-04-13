@@ -116,14 +116,64 @@ router.replace("/game-map");
             hover:border-purple-300/60
           ">
             
-        {/* Left Side - Only Image */}
-        <div className="w-1/2 h-full relative">
-          <img 
-            src="/images/login-left.png" 
-            alt="Rush Race Illustration" 
-            className="w-full h-full object-cover"
-          />
-        </div>
+        {/* Left Side - Only Image with Scanner */}
+<div className="w-1/2 h-full relative overflow-hidden">
+
+  {/* Image (unchanged) */}
+  <img
+    src="/logreg/login.jpeg"
+    alt="Rush Race Illustration"
+    className="w-10px h-20px object-cover"
+  />
+
+  {/* Scanner Swipe Effect */}
+  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+
+    <div className="scanner-line" />
+
+  </div>
+
+  {/* Scanner CSS */}
+  <style jsx>{`
+    @keyframes scannerMove {
+      0% {
+        top: -30%;
+        opacity: 0;
+      }
+      10% {
+        opacity: 0.5;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        top: 130%;
+        opacity: 0;
+      }
+    }
+
+    .scanner-line {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 120px;
+
+      background: linear-gradient(
+        to bottom,
+        transparent,
+        rgba(168, 85, 247, 0.18),
+        rgba(255, 255, 255, 0.25),
+        rgba(168, 85, 247, 0.18),
+        transparent
+      );
+
+      animation: scannerMove 6s linear infinite;
+
+      filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.5));
+    }
+  `}</style>
+
+</div>
 
         {/* Transparent White Glowing Divider */}
         <div className="relative w-[2px] mx-0 flex justify-center">

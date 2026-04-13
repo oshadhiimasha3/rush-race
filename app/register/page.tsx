@@ -148,14 +148,61 @@ export default function RegisterPage() {
           hover:border-purple-300/60
         ">
 
-        {/* Left Side - Image */}
-        <div className="w-1/2 h-full relative">
-          <img
-            src="/images/login-left.png"
-            alt="Rush Race Illustration"
-            className="w-full h-full object-cover"
-          />
-        </div>
+        <div className="w-1/2 h-full relative flex items-center justify-center overflow-hidden">
+  
+  {/* Image */}
+  <img
+    src="/logreg/register.jpeg"
+    alt="Rush Race Illustration"
+    className="w-[350px] h-[450px] object-cover rounded-xl"
+  />
+
+  {/* Scanner Overlay (FULL HALF CONTAINER) */}
+  <div className="absolute inset-0 pointer-events-none">
+    <div className="scanner-line" />
+  </div>
+
+  {/* Scanner CSS */}
+  <style jsx>{`
+    @keyframes scannerMove {
+      0% {
+        top: -30%;
+        opacity: 0;
+      }
+      10% {
+        opacity: 0.5;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        top: 130%;
+        opacity: 0;
+      }
+    }
+
+    .scanner-line {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 140px;
+
+      background: linear-gradient(
+        to bottom,
+        transparent,
+        rgba(168, 85, 247, 0.18),
+        rgba(255, 255, 255, 0.25),
+        rgba(168, 85, 247, 0.18),
+        transparent
+      );
+
+      animation: scannerMove 6s linear infinite;
+
+      filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.5));
+    }
+  `}</style>
+
+</div>
 
         {/* Transparent White Glowing Divider */}
         <div className="relative w-[2px] mx-0 flex justify-center">
