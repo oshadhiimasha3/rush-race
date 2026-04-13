@@ -115,7 +115,6 @@ export default function Navbar() {
     }
   }
 
-  const logoText = "🍌 RUSH RACE";
 
   return (
     <>
@@ -125,10 +124,17 @@ export default function Navbar() {
 
           {/* LOGO */}
           <button onClick={() => handleNavigation("/", "Loading Rush Base...")}>
-            <span className="text-2xl font-bold logo-moving inline-block text-white">
-              {logoText}
-            </span>
-          </button>
+  <span className="flex items-center gap-4 text-2xl font-bold logo-moving text-white">
+    
+    <img
+      src="/icons/banana-logo.png"
+      alt="logo"
+      className="w-7 h-6 drop-shadow-[0_0_10px_rgba(255,255,0,0.8)]"
+    />
+
+    RUSH RACE
+  </span>
+</button>
 
           {/* NAV LINKS */}
           <div className="flex gap-8 text-white font-medium">
@@ -159,11 +165,13 @@ export default function Navbar() {
           {/* MUSIC BUTTON */}
           <button
             onClick={handleMusicToggle}
-            className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-lg hover:bg-white/20 transition-all duration-200 cursor-pointer group"
+            className="flex items-center gap-3 bg-white/10 px-4 py-2 rounded-lg hover:bg-white/20 transition-all duration-200 cursor-pointer group"
           >
-            <span className="text-xl">
-              {isMusicOn ? "🎵" : "🔇"}
-            </span>
+            <img
+            src={isMusicOn ? "/icons/volumeon.png" : "/icons/no-sound.png"}
+            alt="music icon"
+             className="w-5 h-5 filter brightness-0 invert"
+            />
             <span className="text-white/90 font-medium text-sm hidden sm:inline">
               {isMusicOn ? "Music On" : "Music Off"}
             </span>

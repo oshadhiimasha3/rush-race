@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Banana } from "lucide-react";
 
 type LeaderboardEntry = {
@@ -17,6 +18,22 @@ export default function Home() {
   const [error, setError] = useState("");
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
+
+  const router = useRouter();
+
+  // Auth-aware play handler (same logic as Navbar)
+  const handlePlayClick = async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      if (res.ok) {
+        router.push("/game-map");
+      } else {
+        router.push("/login");
+      }
+    } catch {
+      router.push("/login");
+    }
+  };
 
   useEffect(() => {
     async function fetchLeaderboard() {
@@ -179,67 +196,77 @@ export default function Home() {
       {/* HERO + CARDS + LEADERBOARD */}
       <div className="relative z-10 mt-24 px-6 flex flex-col items-center">
 
-        {/* Heading */}
-        <h1 className="text-7xl font-extrabold mb-6 drop-shadow-[0_0_25px_rgba(255,255,0,1)] text-center">
-          🍌 RUSH RACE
-          
-        </h1>
+        <h1 className="text-7xl font-extrabold mb-6 drop-shadow-[0_0_25px_rgba(255,255,0,1)] text-center flex items-center justify-center gap-6">
+  
+  <img
+    src="/icons/banana-logo.png"
+    alt="banana icon"
+    className="w-14 h-14 md:w-16 md:h-16 drop-shadow-[0_0_15px_rgba(255,255,0,0.8)]"
+  />
+
+  RUSH RACE
+</h1>
         <p className="text-xl max-w-2xl mb-10 text-center">
-          Solve puzzles fast, earn points, and dominate the leaderboard.
+          Race 9 stages, earn points, and dominate the leaderboard.
         </p>
 
         {/* CARDS + BUTTON + LEADERBOARD */}
         <div className="flex flex-col md:flex-row items-stretch justify-center gap-8 md:px-20 mb-20 w-full">
 
           {/* Instructions Card */}
-          <div className="flex-1 max-w-[460px] h-[300px] bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 shadow-lg hover:scale-105 transition">
-            <h3 className="text-xl font-bold mb-2 text-center">Game Flow</h3>
-            <div className="mx-auto mb-8 w-16 h-1 bg-white/20 rounded-full"></div>
-            <div className="space-y-4">
-              {/* Stage 1 */}
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between text-sm font-semibold">
-                  <span className="inline-block w-2 h-2 rounded-full bg-white/50 mr-2"></span>
-                  <span className="flex-1">Warm-Up Phase</span>
-                  <span className="text-xs">Unlocks at 50 points</span>
-                </div>
-                <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-purple-500 w-[25%]"></div>
-                </div>
-              </div>
-              {/* Stage 2 */}
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between text-sm font-semibold">
-                  <span className="inline-block w-2 h-2 rounded-full bg-white/50 mr-2"></span>
-                  <span className="flex-1">Speed Rush</span>
-                  <span className="text-xs">Push to 100 points</span>
-                </div>
-                <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-pink-400 w-[50%]"></div>
-                </div>
-              </div>
-              {/* Stage 3 */}
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between text-sm font-semibold">
-                  <span className="inline-block w-2 h-2 rounded-full bg-white/50 mr-2"></span>
-                  <span className="flex-1">Final Sprint</span>
-                  <span className="text-xs">Go beyond 100 points</span>
-                </div>
-                <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-yellow-300 w-[75%]"></div>
-                </div>
-              </div>
-            </div>
-          </div>
+<div className="flex-1 max-w-[460px] h-[300px] bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 shadow-lg hover:scale-105 transition">
 
-          {/* Play Button */}
+  <h3 className="text-xl font-bold mb-2 text-center">Game Flow</h3>
+
+  <div className="mx-auto mb-8 w-16 h-1 bg-white/20 rounded-full"></div>
+
+  <div className="space-y-5">
+
+    {/* Instruction 1 */}
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between text-sm font-semibold">
+        <span>Solve puzzles correctly to unlock stages</span>
+        <span className="text-xs text-white/60">Core gameplay</span>
+      </div>
+      <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+        <div className="h-full bg-purple-500 w-[100%]"></div>
+      </div>
+    </div>
+
+    {/* Instruction 2 */}
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between text-sm font-semibold">
+        <span>Beat the timer it differs on each stage</span>
+        <span className="text-xs text-white/60">Time matters</span>
+      </div>
+      <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+        <div className="h-full bg-pink-400 w-[80%]"></div>
+      </div>
+    </div>
+
+    {/* Instruction 3 */}
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between text-sm font-semibold">
+        <span>Climb up the leaderboard</span>
+        <span className="text-xs text-white/60">Unlock next levels</span>
+      </div>
+      <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+        <div className="h-full bg-yellow-300 w-[60%]"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+          {/* Play Button — now auth-aware like the Navbar Play button */}
           <div className="flex items-center justify-center md:mx-20">
-            <Link href="/login">
-              <button className="relative flex items-center justify-center border border-white/20 bg-white/5 text-white font-bold px-12 py-4 rounded-full text-lg shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-110 hover:shadow-[0_0_50px_rgba(255,255,255,0.4)] transition-all duration-300">
-                Play Now &rarr;
-                <span className="absolute inset-0 rounded-full opacity-20 bg-white/20 animate-ping"></span>
-              </button>
-            </Link>
+            <button
+              onClick={handlePlayClick}
+              className="relative flex items-center justify-center border border-white/20 bg-white/5 text-white font-bold px-12 py-4 rounded-full text-lg shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-110 hover:shadow-[0_0_50px_rgba(255,255,255,0.4)] transition-all duration-300"
+            >
+              Play Now &rarr;
+              <span className="absolute inset-0 rounded-full opacity-20 bg-white/20 animate-ping"></span>
+            </button>
           </div>
 
           {/* Leaderboard */}
@@ -406,7 +433,7 @@ export default function Home() {
         <div className="flex items-center gap-3 text-white/90">
           <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
           <p>
-            Time decreases by <span className="text-yellow-300 font-bold">5 seconds</span> every level
+            Time <span className="text-yellow-300 font-bold"> decreases </span> every level
           </p>
         </div>
       </div>

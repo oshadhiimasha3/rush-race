@@ -32,12 +32,12 @@ export default function GameOverModal({
               <p className="text-lg font-semibold">Solved: {puzzlesSolved}</p>
             </div>
             <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl hover:bg-white/20 transition-all duration-200">
-              <p className="text-lg font-semibold">🪙 Coins: {coins}</p>
+              <p className="text-lg font-semibold">Coins: {coins}</p>
             </div>
           </div>
 
           {/* Retry costs 30 coins */}
-          <p className="text-sm text-white/60 -mb-2">Retry costs 30 🪙 coins</p>
+          <p className="text-sm text-white/60 -mb-2 mt-3">Retry costs 30 coins</p>
 
           <div className="flex items-center justify-center gap-8 -mt-1">
             <img

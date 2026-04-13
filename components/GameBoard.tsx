@@ -124,7 +124,7 @@ export default function GameBoard({
     if (timeLeft <= 0) {
       sounds.playGameOver();
       setGameOver(true);
-      setFeedback("⏰ Time's Up! Game Over");
+      setFeedback(" Time's Up! Game Over");
       setCombo(0);
 
       // revert
@@ -475,9 +475,15 @@ export default function GameBoard({
           <p className="font-bold">{score}</p>
         </div>
         <div className="bg-white/10 p-4 rounded-xl text-center animate-glow3 card-glow">
-          <p>🪙 Coins</p>
-          <p className="font-bold">{coins}</p>
-        </div>
+  
+  <img
+    src="/coin.png"
+    alt="coin icon"
+    className="w-7 h-7 mx-auto mb-1 drop-shadow-[0_0_8px_gold]"
+  />
+
+  <p className="font-bold">{coins}</p>
+</div>
       </div>
 
       {/* MAIN UI */}
@@ -539,11 +545,11 @@ export default function GameBoard({
 
           {(gameOver || stageCompleted) && (
             <button
-              onClick={restartGame}
-              className="mt-4 py-3 bg-green-600 rounded-xl text-lg font-bold hover:bg-green-500"
-            >
-              🔁 Retry Stage
-            </button>
+  onClick={restartGame}
+  className="mt-4 py-3 px-6 rounded-xl text-lg font-bold text-white bg-white/10 border border-white/20 backdrop-blur-md hover:bg-white/20 hover:scale-105 transition-all duration-200"
+>
+  Retry Stage
+</button>
           )}
         </div>
       </div>

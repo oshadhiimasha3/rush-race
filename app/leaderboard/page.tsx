@@ -79,12 +79,12 @@ export default function Leaderboard() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden text-gray-100 flex flex-col bg-[radial-gradient(circle_at_10%_10%,rgba(255,84,176,0.22),transparent_35%),radial-gradient(circle_at_90%_10%,rgba(255,84,176,0.20),transparent_35%),radial-gradient(circle_at_10%_90%,rgba(255,84,176,0.18),transparent_40%),radial-gradient(circle_at_90%_90%,rgba(255,84,176,0.18),transparent_40%),linear-gradient(to_bottom_right,#000000,#3b0764,#312e81)]">
+    <div className="relative min-h-screen overflow-hidden text-gray-100 flex flex-col bg-[radial-gradient(circle_at_10%_10%,rgba(139,92,246,0.12),transparent_40%),radial-gradient(circle_at_90%_10%,rgba(124,58,237,0.10),transparent_45%),radial-gradient(circle_at_10%_90%,rgba(99,102,241,0.08),transparent_50%),radial-gradient(circle_at_90%_90%,rgba(168,85,247,0.08),transparent_50%),linear-gradient(to_bottom_right,#000000,#1a103d,#0f172a)]">
 
       {/* 🌫 NEBULA */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(168,85,247,0.35),transparent_55%),radial-gradient(circle_at_80%_70%,rgba(99,102,241,0.30),transparent_60%)] animate-pulse opacity-80 pointer-events-none" />
 
-      {/* 🌌 FAR STARS */}
+      {/* FAR STARS */}
       <div className="absolute inset-0 pointer-events-none">
         {starsFar.map((_, i) => (
           <div
@@ -98,7 +98,7 @@ export default function Leaderboard() {
         ))}
       </div>
 
-      {/* 🌌 MID STARS */}
+      {/* MID STARS */}
       <div className="absolute inset-0 pointer-events-none">
         {starsMid.map((_, i) => (
           <div
@@ -112,7 +112,7 @@ export default function Leaderboard() {
         ))}
       </div>
 
-      {/* 🌌 NEAR STARS */}
+      {/* NEAR STARS */}
       <div className="absolute inset-0 pointer-events-none">
         {starsNear.map((_, i) => (
           <div
@@ -270,16 +270,23 @@ export default function Leaderboard() {
               )}
 
               {top3[0] && (
-                <div className="flex flex-col items-center scale-110">
-                  <div className="text-3xl mb-3 banana-animate">🍌</div>
-                  <img
-                    src={getAvatar(top3[0].username)}
-                    className={`w-20 h-20 rounded-full border-1 ring-4 ${getRankRing(top3[0].highestScore)} ring-offset-2 ring-offset-purple-950 top1-glow`}
-                  />
-                  <p className="font-bold mt-2 text-purple-100">{top3[0].username}</p>
-                  <p className="text-purple-300 font-extrabold">{top3[0].highestScore}</p>
-                </div>
-              )}
+  <div className="flex flex-col items-center scale-110">
+    
+    <img
+      src="/icons/banana-logo.png"
+      alt="banana icon"
+      className="w-8 h-7 mb-5 banana-animate drop-shadow-[0_0_10px_rgba(255,255,0,0.8)]"
+    />
+
+    <img
+      src={getAvatar(top3[0].username)}
+      className={`w-20 h-20 rounded-full border-1 ring-4 ${getRankRing(top3[0].highestScore)} ring-offset-2 ring-offset-purple-950 top1-glow`}
+    />
+
+    <p className="font-bold mt-2 text-purple-100">{top3[0].username}</p>
+    <p className="text-purple-300 font-extrabold">{top3[0].highestScore}</p>
+  </div>
+)}
 
               {top3[2] && (
                 <div className="flex flex-col items-center">
