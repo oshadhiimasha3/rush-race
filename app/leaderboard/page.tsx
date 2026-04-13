@@ -239,11 +239,16 @@ export default function Leaderboard() {
         `}</style>
 
         {loading ? (
-          <p className="text-purple-300 text-lg mb-6">Loading...</p>
-        ) : error ? (
-          <p className="text-red-400 text-lg mb-6">{error}</p>
-        ) : (
-         <div className="w-full max-w-xl bg-purple-950/40 backdrop-blur-md rounded-3xl shadow-4xl border border-white/10 p-6 mt-10 md:p-8 shadow-[0_0_25px_rgba(255,255,255,0.12)] relative overflow-hidden leaderboard-card">
+  <div className="w-full flex items-center justify-center py-20">
+    <div className="relative w-24 h-24 rounded-full border-4 border-purple-400/30 flex items-center justify-center animate-spin-slow">
+      <div className="absolute w-20 h-20 border-4 border-t-purple-400 border-purple-400/40 rounded-full animate-spin-neon"></div>
+      <div className="absolute w-16 h-16 border-2 border-t-purple-300 border-purple-300/50 rounded-full animate-pulse-neon"></div>
+    </div>
+  </div>
+) : error ? (
+  <p className="text-red-400 text-lg mb-6">{error}</p>
+) : (
+  <div className="w-full max-w-xl bg-purple-950/40 backdrop-blur-md rounded-3xl shadow-4xl border border-white/10 p-6 mt-10 md:p-8 shadow-[0_0_25px_rgba(255,255,255,0.12)] relative overflow-hidden leaderboard-card">
 
   <h1 className="text-4xl md:text-4xl font-extrabold text-purple-300 mt-5 mb-10 text-center animate-race tracking-widest drop-shadow-[0_0_10px_rgba(168,85,247,0.6)] relative">
   TOP RUSHERS

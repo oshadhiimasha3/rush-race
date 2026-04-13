@@ -247,10 +247,15 @@ export default function Home() {
             <h3 className="text-xl font-bold mb-2 text-center">Top Rushers</h3>
             <div className="mx-auto mb-6 w-16 h-1 bg-white/20 rounded-full"></div>
             {loading ? (
-              <p className="text-center">Loading...</p>
-            ) : error ? (
-              <p className="text-red-400 text-center">{error}</p>
-            ) : (
+  <div className="w-full h-full flex items-center justify-center py-10">
+    <div className="relative w-24 h-24 rounded-full border-4 border-purple-400/30 flex items-center justify-center animate-spin-slow mb-15">
+      <div className="absolute w-20 h-20 border-4 border-t-purple-400 border-purple-400/40 rounded-full animate-spin-neon"></div>
+      <div className="absolute w-16 h-16 border-2 border-t-purple-300 border-purple-300/50 rounded-full animate-pulse-neon"></div>
+    </div>
+  </div>
+) : error ? (
+  <p className="text-red-400 text-center">{error}</p>
+) : (
               <div className="space-y-3 overflow-y-auto h-[220px]">
                 {top3.map((player, index) => (
                   <div
