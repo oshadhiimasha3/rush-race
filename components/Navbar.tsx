@@ -185,7 +185,7 @@ export default function Navbar() {
               className="flex items-center gap-3 bg-white/10 px-3 py-2 rounded-lg hover:bg-white/20 transition cursor-pointer backdrop-blur-md"
             >
               <img
-                src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${username}`}
+                src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${username}`} 
                 className="w-8 h-8 rounded-full border-2 border-yellow-300 shadow-[0_0_10px_rgba(255,255,0,0.6)]"
               />
               <span className="text-white font-medium">{username}</span>

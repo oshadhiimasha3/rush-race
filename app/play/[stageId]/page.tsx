@@ -28,7 +28,7 @@ export default function PlayPage() {
   if (!stage) {
     return (
       <div className="text-center mt-10 text-red-500">
-        ❌ Invalid Stage (ID: {stageId})
+        Invalid Stage (ID: {stageId})
       </div>
     );
   }
