@@ -214,7 +214,7 @@ export default function Home() {
         <div className="flex flex-col md:flex-row items-stretch justify-center gap-8 md:px-20 mb-20 w-full">
 
           {/* Instructions Card */}
-<div className="flex-1 max-w-[460px] h-[300px] bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 shadow-lg hover:scale-105 transition">
+<div className="flex-1 max-w-[460px] h-[300px] bg-white/10 backdrop-blur-m border border-white/20 rounded-2xl p-4 shadow-lg hover:scale-105 transition">
 
   <h3 className="text-xl font-bold mb-2 text-center">Game Flow</h3>
 
@@ -270,7 +270,7 @@ export default function Home() {
           </div>
 
           {/* Leaderboard */}
-          <div className="flex-1 max-w-[500px] h-[300px] bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 shadow-lg transition">
+          <div className="flex-1 max-w-[500px] h-[300px] bg-white/10 backdrop-blur-m border border-white/20 rounded-2xl p-4 shadow-lg transition">
             <h3 className="text-xl font-bold mb-2 text-center">Top Rushers</h3>
             <div className="mx-auto mb-6 w-16 h-1 bg-white/20 rounded-full"></div>
             {loading ? (
