@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
+import { useRouter } from "next/navigation";
 
 type UserType = {
   username: string;
@@ -27,15 +28,21 @@ export default function ProfilePage() {
   const [user, setUser] = useState<UserType | null>(null);
   const [leaders, setLeaders] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     async function load() {
       const [u, l] = await Promise.all([
-        fetch("/api/auth/me"),
-        fetch("/api/leaderboard/top"),
-      ]);
+  fetch("/api/auth/me"),
+  fetch("/api/leaderboard/top"),
+]);
 
-      const userData = await u.json();
+if (!u.ok) {
+  router.push("/login");
+  return;
+}
+
+const userData = await u.json();
       const leaderData = await l.json();
 
       let rank = 1;
@@ -58,7 +65,7 @@ export default function ProfilePage() {
   const getAvatar = (u: string) =>
     `https://api.dicebear.com/7.x/pixel-art/png?seed=${u}`;
 
-  if (loading || !user) {
+  if (loading) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#01061C] overflow-hidden">
       
@@ -70,6 +77,8 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+if (!user) return null;
 
   const {
     totalScore = 0,

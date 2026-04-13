@@ -64,7 +64,7 @@ export default function GameBoard({
   const [puzzlesSolved, setPuzzlesSolved] = useState(0);
   const [loadingUser, setLoadingUser] = useState(true);
 
-  // ✅ NEW: snapshot of stats before stage
+  // snapshot of stats before stage
   const [initialStats, setInitialStats] = useState({
     score: 0,
     coins: 0,
@@ -86,7 +86,7 @@ export default function GameBoard({
           setCoins(data.stats.coins || 0);
           setCorrectAnswers(data.stats.correctAnswers || 0);
 
-          // ✅ store snapshot
+          // store snapshot
           setInitialStats({
             score: initialScore,
             coins: data.stats.coins || 0,
@@ -127,7 +127,7 @@ export default function GameBoard({
       setFeedback("⏰ Time's Up! Game Over");
       setCombo(0);
 
-      // ❌ revert
+      // revert
       setScore(initialStats.score);
       setCoins(initialStats.coins);
       setCorrectAnswers(initialStats.correctAnswers);
@@ -234,7 +234,7 @@ export default function GameBoard({
       setGameOver(true);
       setCombo(0);
 
-      // ❌ revert
+      // revert
       setScore(initialStats.score);
       setCoins(initialStats.coins);
       setCorrectAnswers(initialStats.correctAnswers);
@@ -249,7 +249,43 @@ export default function GameBoard({
     setAnswer("");
   }
 
-  // === Restart
+  // === Handle Retry: deducts 30 coins from initialStats, updates snapshot, then restarts
+  function handleRetry() {
+    const newCoins = Math.max(0, initialStats.coins - 30);
+
+    // Build new snapshot with deducted coins so restartGame never reverts above this
+    const newInitialStats = {
+      score: initialStats.score,
+      coins: newCoins,
+      correctAnswers: initialStats.correctAnswers,
+    };
+
+    // Update snapshot so future reverts respect the deduction
+    setInitialStats(newInitialStats);
+
+    // Reset game state using the updated snapshot
+    setCombo(0);
+    setPuzzlesSolved(0);
+    setStageCompleted(false);
+    setGameOver(false);
+    setPaused(false);
+    setFeedback("");
+    setTimeLeft(stageConfig.time);
+    setScore(newInitialStats.score);
+    setCoins(newInitialStats.coins);
+    setCorrectAnswers(newInitialStats.correctAnswers);
+
+    // Persist deducted coins to backend
+    saveScore(
+      newInitialStats.score,
+      newInitialStats.correctAnswers,
+      newInitialStats.coins
+    );
+
+    loadPuzzle();
+  }
+
+  // === Restart (used for non-retry resets, keeps current initialStats)
   function restartGame() {
     setCombo(0);
     setPuzzlesSolved(0);
@@ -301,41 +337,41 @@ export default function GameBoard({
     }
   }, [loadingUser]);
 
-if (showLoader)
-  return (
-    <div className="relative min-h-screen flex items-center justify-center bg-[#01061C] overflow-hidden">
-      {/* Neon star background */}
-      <div className="absolute inset-0">
-        {[...Array(50)].map((_, i) => (
-          <span
-            key={i}
-            className="absolute w-[2px] h-[2px] rounded-full bg-white/80 animate-pulse-neon"
-            style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`, // small random delay
-              animationDuration: `${10 + Math.random() * 6}s`, // slower stars, 6–12s
-              opacity: 0.7 + Math.random() * 0.3,
-              boxShadow: `0 0 ${1 + Math.random() * 2}px rgba(255,255,255,0.8)`,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Neon Loader */}
-      <div className="flex flex-col items-center gap-6 z-10">
-        <div className="relative w-24 h-24 rounded-full border-4 border-purple-400/30 flex items-center justify-center animate-spin-slow">
-          <div className="absolute w-20 h-20 border-4 border-t-purple-400 border-purple-400/40 rounded-full animate-spin-neon"></div>
-          <div className="absolute w-16 h-16 border-2 border-t-purple-300 border-purple-300/50 rounded-full animate-pulse-neon"></div>
+  if (showLoader)
+    return (
+      <div className="relative min-h-screen flex items-center justify-center bg-[#01061C] overflow-hidden">
+        {/* Neon star background */}
+        <div className="absolute inset-0">
+          {[...Array(50)].map((_, i) => (
+            <span
+              key={i}
+              className="absolute w-[2px] h-[2px] rounded-full bg-white/80 animate-pulse-neon"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 3}s`,
+                animationDuration: `${10 + Math.random() * 6}s`,
+                opacity: 0.7 + Math.random() * 0.3,
+                boxShadow: `0 0 ${1 + Math.random() * 2}px rgba(255,255,255,0.8)`,
+              }}
+            />
+          ))}
         </div>
 
-        {/* Loading Text */}
-        <p className="text-white text-xl opacity-80 tracking-wider glow-text text-center">
-          Initializing Race ...
-        </p>
+        {/* Neon Loader */}
+        <div className="flex flex-col items-center gap-6 z-10">
+          <div className="relative w-24 h-24 rounded-full border-4 border-purple-400/30 flex items-center justify-center animate-spin-slow">
+            <div className="absolute w-20 h-20 border-4 border-t-purple-400 border-purple-400/40 rounded-full animate-spin-neon"></div>
+            <div className="absolute w-16 h-16 border-2 border-t-purple-300 border-purple-300/50 rounded-full animate-pulse-neon"></div>
+          </div>
+
+          {/* Loading Text */}
+          <p className="text-white text-xl opacity-80 tracking-wider glow-text text-center">
+            Initializing Race ...
+          </p>
+        </div>
       </div>
-    </div>
-  );
+    );
 
   // === Clock color
   let timeColor = "text-white";
@@ -351,74 +387,74 @@ if (showLoader)
       <div className="absolute inset-0 bg-black/50 pointer-events-none"></div>
 
       {/* NAVBAR */}
-<div className="relative z-10 w-full flex justify-between items-center px-5 py-3 bg-white/10 backdrop-blur-l border-b border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+      <div className="relative z-10 w-full flex justify-between items-center px-5 py-3 bg-white/10 backdrop-blur-l border-b border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
 
-{/* LEFT BUTTON */}
-<button
-  onClick={() => router.push("/game-map")}
-  className="flex items-center h-10 rounded-lg bg-white/10 border border-white/20 backdrop-blur-md hover:bg-white/20 transition-all duration-300 px-1 gap-0"
->
-  <img src="/mapicon.png" alt="Map Icon" className="w-25 h-25 object-contain" />
-  <span className="text-white font-medium"></span>
-</button>
+        {/* LEFT BUTTON */}
+        <button
+          onClick={() => router.push("/game-map")}
+          className="flex items-center h-10 rounded-lg bg-white/10 border border-white/20 backdrop-blur-md hover:bg-white/20 transition-all duration-300 px-1 gap-0"
+        >
+          <img src="/mapicon.png" alt="Map Icon" className="w-25 h-25 object-contain" />
+          <span className="text-white font-medium"></span>
+        </button>
 
-  {/* CENTER TITLE */}
-  <div className="flex items-center justify-center gap-5">
+        {/* CENTER TITLE */}
+        <div className="flex items-center justify-center gap-5">
 
-    {/* LEFT Twinkling Bullet */}
-    <span className="w-2.5 h-2.5 rounded-full bg-white animate-bulletGlow"></span>
+          {/* LEFT Twinkling Bullet */}
+          <span className="w-2.5 h-2.5 rounded-full bg-white animate-bulletGlow"></span>
 
-    {/* Constant Glow Title */}
-    <h1 className="text-xl font-bold glow-text">
-      Race Through The {arenaNames[stageConfig.id - 1] || `Race ${stageConfig.id}`}
-    </h1>
+          {/* Constant Glow Title */}
+          <h1 className="text-xl font-bold glow-text">
+            Race Through The {arenaNames[stageConfig.id - 1] || `Race ${stageConfig.id}`}
+          </h1>
 
-    {/* RIGHT Twinkling Bullet */}
-    <span className="w-2.5 h-2.5 rounded-full bg-white animate-bulletGlow"></span>
+          {/* RIGHT Twinkling Bullet */}
+          <span className="w-2.5 h-2.5 rounded-full bg-white animate-bulletGlow"></span>
 
-  </div>
+        </div>
 
-  {/* RIGHT BUTTON */}
-  <button
-    onClick={() => setPaused(!paused)}
-    className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 backdrop-blur-md hover:bg-white/20 transition-all duration-300"
-  >
-    {paused ? "▶ Resume" : "⏸ Pause"}
-  </button>
-</div>
+        {/* RIGHT BUTTON */}
+        <button
+          onClick={() => setPaused(!paused)}
+          className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 backdrop-blur-md hover:bg-white/20 transition-all duration-300"
+        >
+          {paused ? "▶ Resume" : "⏸ Pause"}
+        </button>
+      </div>
 
-{/* NAVBAR ANIMATIONS */}
-<style jsx>{`
-  /* Constant bright glow (no animation) */
-  .glow-text {
-    text-shadow:
-      0 0 4px rgba(255,255,255,0.5),
-      0 0 8px rgba(255,255,255,0.4),
-      0 0 14px rgba(255,255,255,0.3);
-  }
+      {/* NAVBAR ANIMATIONS */}
+      <style jsx>{`
+        /* Constant bright glow (no animation) */
+        .glow-text {
+          text-shadow:
+            0 0 4px rgba(255,255,255,0.5),
+            0 0 8px rgba(255,255,255,0.4),
+            0 0 14px rgba(255,255,255,0.3);
+        }
 
-  @keyframes bulletGlow {
-    0%, 100% {
-      box-shadow:
-        0 0 6px rgba(255,255,255,0.6),
-        0 0 12px rgba(121, 117, 117, 0.4);
-      opacity: 0.3;
-    }
-    50% {
-      box-shadow:
-        0 0 12px rgba(255,255,255,1),
-        0 0 25px rgba(255,255,255,0.9),
-        0 0 40px rgba(255,255,255,0.7);
-      opacity: 1;
-    }
-  }
+        @keyframes bulletGlow {
+          0%, 100% {
+            box-shadow:
+              0 0 6px rgba(255,255,255,0.6),
+              0 0 12px rgba(121, 117, 117, 0.4);
+            opacity: 0.3;
+          }
+          50% {
+            box-shadow:
+              0 0 12px rgba(255,255,255,1),
+              0 0 25px rgba(255,255,255,0.9),
+              0 0 40px rgba(255,255,255,0.7);
+            opacity: 1;
+          }
+        }
 
-  .animate-bulletGlow {
-    animation: bulletGlow 1.5s ease-in-out infinite;
-    animation-delay: 0s; 
-    animation-fill-mode: both;
-  }
-`}</style>
+        .animate-bulletGlow {
+          animation: bulletGlow 1.5s ease-in-out infinite;
+          animation-delay: 0s;
+          animation-fill-mode: both;
+        }
+      `}</style>
 
       {/* TOP STATS */}
       <style>{`
@@ -512,30 +548,31 @@ if (showLoader)
         </div>
       </div>
 
-{/* ---------------- MODALS ---------------- */}
+      {/* ---------------- MODALS ---------------- */}
 
-{/* PAUSE MODAL */}
-{paused && !gameOver && !stageCompleted && (
-  <PauseModal setPaused={setPaused} />
-)}
+      {/* PAUSE MODAL */}
+      {paused && !gameOver && !stageCompleted && (
+        <PauseModal setPaused={setPaused} />
+      )}
 
-{/* GAME OVER MODAL */}
-{gameOver && !stageCompleted && (
-  <GameOverModal
-    score={score}
-    puzzlesSolved={puzzlesSolved}
-    restartGame={restartGame}
-  />
-)}
+      {/* GAME OVER MODAL — passes handleRetry so 30 coins are deducted */}
+      {gameOver && !stageCompleted && (
+        <GameOverModal
+          score={score}
+          puzzlesSolved={puzzlesSolved}
+          coins={coins}
+          restartGame={handleRetry}
+        />
+      )}
 
-{/* STAGE COMPLETED MODAL */}
-{stageCompleted && !gameOver && (
-  <StageCompletedModal
-    score={score}
-    puzzlesSolved={puzzlesSolved}
-    stageId={stageConfig.id} 
-  />
-)}
+      {/* STAGE COMPLETED MODAL */}
+      {stageCompleted && !gameOver && (
+        <StageCompletedModal
+          score={score}
+          puzzlesSolved={puzzlesSolved}
+          stageId={stageConfig.id}
+        />
+      )}
 
     </div>
   );
